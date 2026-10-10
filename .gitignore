@@ -1,0 +1,24 @@
+# Root .gitignore (Flutter project ka apna .gitignore app/ ke andar khud ban jata hai)
+
+# ===== Flutter / Dart =====
+**/.dart_tool/
+**/build/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/*.iml
+**/.idea/
+**/android/local.properties
+**/android/.gradle/
+**/*.jks
+**/*.keystore
+**/key.properties
+
+# ===== Backend (Node) =====
+**/node_modules/
+backend/.env
+backend/uploads/
+
+# ===== OS / misc =====
+.DS_Store
+Thumbs.db
+*.log
