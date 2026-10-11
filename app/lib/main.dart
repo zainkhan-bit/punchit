@@ -11,8 +11,7 @@ void main() {
   runApp(
     MultiProvider(
       providers: [
-        // Backend banne ke baad sirf yeh line badalni hai:
-        // Provider<PosRepository>(create: (_) => ApiPosRepository()),
+
         Provider<PosRepository>(create: (_) => MockPosRepository()),
         ChangeNotifierProvider(create: (_) => OrderProvider()),
       ],
