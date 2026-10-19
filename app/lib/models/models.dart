@@ -1,9 +1,3 @@
-// Saare models ek file mein.
-// fromJson / toJson abhi mock mein use nahi ho rahe, lekin backend connect
-// karte waqt API ka data yahin se parse aur send hoga.
-//
-// Rule: id == 0 matlab naya record (abhi save nahi hua).
-
 enum OrderType { dineIn, takeaway }
 
 enum TableStatus { free, occupied, billed }
@@ -12,8 +6,6 @@ enum StationType { item, expo }
 
 double _toDouble(dynamic v) => v == null ? 0 : double.parse(v.toString());
 bool _toBool(dynamic v) => v == true || v == 1 || v == '1';
-
-// ======================= STAFF =======================
 
 class StaffRoles {
   static const server = 'server';
@@ -24,19 +16,19 @@ class StaffRoles {
   static const all = [server, kitchen, manager, owner];
 
   static String label(String role) => switch (role) {
-        server => 'Server',
-        kitchen => 'Kitchen',
-        manager => 'Manager',
-        owner => 'Owner',
-        _ => role,
-      };
+    server => 'Server',
+    kitchen => 'Kitchen',
+    manager => 'Manager',
+    owner => 'Owner',
+    _ => role,
+  };
 }
 
 class Staff {
   final int id;
   final String employeeCode;
   final String name;
-  final String role; // server | kitchen | manager | owner
+  final String role;
   final bool isActive;
 
   const Staff({
@@ -47,32 +39,29 @@ class Staff {
     this.isActive = true,
   });
 
-  /// Manager aur Owner ko admin panel milta hai
   bool get isAdmin => role == StaffRoles.manager || role == StaffRoles.owner;
 
   factory Staff.fromJson(Map<String, dynamic> j) => Staff(
-        id: j['id'],
-        employeeCode: j['employee_code'],
-        name: j['name'],
-        role: j['role'],
-        isActive: j['is_active'] == null ? true : _toBool(j['is_active']),
-      );
+    id: j['id'],
+    employeeCode: j['employee_code'],
+    name: j['name'],
+    role: j['role'],
+    isActive: j['is_active'] == null ? true : _toBool(j['is_active']),
+  );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'employee_code': employeeCode,
-        'name': name,
-        'role': role,
-        'is_active': isActive,
-      };
+    'id': id,
+    'employee_code': employeeCode,
+    'name': name,
+    'role': role,
+    'is_active': isActive,
+  };
 }
-
-// ======================= STATIONS =======================
 
 class Station {
   final int id;
-  final String name; // Pizza Make Table, Cut Table
-  final StationType type; // item = sirf apne items, expo = poora order
+  final String name;
+  final StationType type;
   final String? printerIp;
   final int printerPort;
   final bool isActive;
@@ -87,30 +76,28 @@ class Station {
   });
 
   factory Station.fromJson(Map<String, dynamic> j) => Station(
-        id: j['id'],
-        name: j['name'],
-        type: j['station_type'] == 'expo' ? StationType.expo : StationType.item,
-        printerIp: j['printer_ip'],
-        printerPort: j['printer_port'] ?? 9100,
-        isActive: _toBool(j['is_active']),
-      );
+    id: j['id'],
+    name: j['name'],
+    type: j['station_type'] == 'expo' ? StationType.expo : StationType.item,
+    printerIp: j['printer_ip'],
+    printerPort: j['printer_port'] ?? 9100,
+    isActive: _toBool(j['is_active']),
+  );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'station_type': type.name,
-        'printer_ip': printerIp,
-        'printer_port': printerPort,
-        'is_active': isActive,
-      };
+    'id': id,
+    'name': name,
+    'station_type': type.name,
+    'printer_ip': printerIp,
+    'printer_port': printerPort,
+    'is_active': isActive,
+  };
 }
-
-// ======================= MENU =======================
 
 class MenuCategory {
   final int id;
   final String name;
-  final int? stationId; // is category ke items kis station pe print hon
+  final int? stationId;
   final int sortOrder;
 
   const MenuCategory({
@@ -121,18 +108,18 @@ class MenuCategory {
   });
 
   factory MenuCategory.fromJson(Map<String, dynamic> j) => MenuCategory(
-        id: j['id'],
-        name: j['name'],
-        stationId: j['station_id'],
-        sortOrder: j['sort_order'] ?? 0,
-      );
+    id: j['id'],
+    name: j['name'],
+    stationId: j['station_id'],
+    sortOrder: j['sort_order'] ?? 0,
+  );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'station_id': stationId,
-        'sort_order': sortOrder,
-      };
+    'id': id,
+    'name': name,
+    'station_id': stationId,
+    'sort_order': sortOrder,
+  };
 }
 
 class ModifierOption {
@@ -149,26 +136,26 @@ class ModifierOption {
   });
 
   factory ModifierOption.fromJson(Map<String, dynamic> j) => ModifierOption(
-        id: j['id'],
-        name: j['name'],
-        price: _toDouble(j['price']),
-        isAvailable:
-            j['is_available'] == null ? true : _toBool(j['is_available']),
-      );
+    id: j['id'],
+    name: j['name'],
+    price: _toDouble(j['price']),
+    isAvailable:
+    j['is_available'] == null ? true : _toBool(j['is_available']),
+  );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'price': price,
-        'is_available': isAvailable,
-      };
+    'id': id,
+    'name': name,
+    'price': price,
+    'is_available': isAvailable,
+  };
 }
 
 class ModifierGroup {
   final int id;
-  final String name; // Crust, Extra Toppings
-  final int minSelect; // 1 = zaroori
-  final int maxSelect; // 1 = ek hi (radio), >1 = checkbox
+  final String name;
+  final int minSelect;
+  final int maxSelect;
   final List<ModifierOption> options;
 
   const ModifierGroup({
@@ -181,27 +168,26 @@ class ModifierGroup {
 
   bool get isSingle => maxSelect == 1;
 
-  /// Order screen pe sirf available options dikhane hain
   List<ModifierOption> get availableOptions =>
       options.where((o) => o.isAvailable).toList();
 
   factory ModifierGroup.fromJson(Map<String, dynamic> j) => ModifierGroup(
-        id: j['id'],
-        name: j['name'],
-        minSelect: j['min_select'],
-        maxSelect: j['max_select'],
-        options: ((j['options'] ?? []) as List)
-            .map((o) => ModifierOption.fromJson(o))
-            .toList(),
-      );
+    id: j['id'],
+    name: j['name'],
+    minSelect: j['min_select'],
+    maxSelect: j['max_select'],
+    options: ((j['options'] ?? []) as List)
+        .map((o) => ModifierOption.fromJson(o))
+        .toList(),
+  );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'min_select': minSelect,
-        'max_select': maxSelect,
-        'options': options.map((o) => o.toJson()).toList(),
-      };
+    'id': id,
+    'name': name,
+    'min_select': minSelect,
+    'max_select': maxSelect,
+    'options': options.map((o) => o.toJson()).toList(),
+  };
 }
 
 class MenuItem {
@@ -209,7 +195,7 @@ class MenuItem {
   final int categoryId;
   final String name;
   final double price;
-  final int? stationId; // null = category wala station
+  final int? stationId;
   final bool isAvailable;
   final List<ModifierGroup> modifierGroups;
 
@@ -226,40 +212,37 @@ class MenuItem {
   bool get hasOptions => modifierGroups.isNotEmpty;
 
   MenuItem withGroups(List<ModifierGroup> groups) => MenuItem(
-        id: id,
-        categoryId: categoryId,
-        name: name,
-        price: price,
-        stationId: stationId,
-        isAvailable: isAvailable,
-        modifierGroups: groups,
-      );
+    id: id,
+    categoryId: categoryId,
+    name: name,
+    price: price,
+    stationId: stationId,
+    isAvailable: isAvailable,
+    modifierGroups: groups,
+  );
 
   factory MenuItem.fromJson(Map<String, dynamic> j) => MenuItem(
-        id: j['id'],
-        categoryId: j['category_id'],
-        name: j['name'],
-        price: _toDouble(j['price']),
-        stationId: j['station_id'],
-        isAvailable: _toBool(j['is_available']),
-        modifierGroups: ((j['modifier_groups'] ?? []) as List)
-            .map((g) => ModifierGroup.fromJson(g))
-            .toList(),
-      );
+    id: j['id'],
+    categoryId: j['category_id'],
+    name: j['name'],
+    price: _toDouble(j['price']),
+    stationId: j['station_id'],
+    isAvailable: _toBool(j['is_available']),
+    modifierGroups: ((j['modifier_groups'] ?? []) as List)
+        .map((g) => ModifierGroup.fromJson(g))
+        .toList(),
+  );
 
-  /// Save karte waqt sirf group ids jati hain
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'category_id': categoryId,
-        'name': name,
-        'price': price,
-        'station_id': stationId,
-        'is_available': isAvailable,
-        'modifier_group_ids': modifierGroups.map((g) => g.id).toList(),
-      };
+    'id': id,
+    'category_id': categoryId,
+    'name': name,
+    'price': price,
+    'station_id': stationId,
+    'is_available': isAvailable,
+    'modifier_group_ids': modifierGroups.map((g) => g.id).toList(),
+  };
 }
-
-// ======================= FLOOR =======================
 
 class Hall {
   final int id;
@@ -289,39 +272,36 @@ class DiningTable {
   });
 
   DiningTable withStatus(TableStatus s) => DiningTable(
-        id: id,
-        hallId: hallId,
-        tableNumber: tableNumber,
-        capacity: capacity,
-        status: s,
-      );
+    id: id,
+    hallId: hallId,
+    tableNumber: tableNumber,
+    capacity: capacity,
+    status: s,
+  );
 
   factory DiningTable.fromJson(Map<String, dynamic> j) => DiningTable(
-        id: j['id'],
-        hallId: j['hall_id'],
-        tableNumber: j['table_number'],
-        capacity: j['capacity'],
-        status: switch (j['order_status']) {
-          'open' => TableStatus.occupied,
-          'billed' => TableStatus.billed,
-          _ => TableStatus.free,
-        },
-      );
+    id: j['id'],
+    hallId: j['hall_id'],
+    tableNumber: j['table_number'],
+    capacity: j['capacity'],
+    status: switch (j['order_status']) {
+      'open' => TableStatus.occupied,
+      'billed' => TableStatus.billed,
+      _ => TableStatus.free,
+    },
+  );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'hall_id': hallId,
-        'table_number': tableNumber,
-        'capacity': capacity,
-      };
+    'id': id,
+    'hall_id': hallId,
+    'table_number': tableNumber,
+    'capacity': capacity,
+  };
 }
 
-// ======================= TAX & SETTINGS =======================
-
-/// Har payment method ka apna tax rate (e.g. Cash aur Card ka alag)
 class PaymentMethod {
   final int id;
-  final String name; // Cash, Card, JazzCash
+  final String name;
   final double taxPercent;
   final bool isActive;
 
@@ -333,21 +313,20 @@ class PaymentMethod {
   });
 
   factory PaymentMethod.fromJson(Map<String, dynamic> j) => PaymentMethod(
-        id: j['id'],
-        name: j['name'],
-        taxPercent: _toDouble(j['tax_percent']),
-        isActive: _toBool(j['is_active']),
-      );
+    id: j['id'],
+    name: j['name'],
+    taxPercent: _toDouble(j['tax_percent']),
+    isActive: _toBool(j['is_active']),
+  );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'tax_percent': taxPercent,
-        'is_active': isActive,
-      };
+    'id': id,
+    'name': name,
+    'tax_percent': taxPercent,
+    'is_active': isActive,
+  };
 }
 
-/// Restaurant level settings (DB mein sirf 1 row)
 class AppSettings {
   final String restaurantName;
   final double serviceChargePercent;
@@ -362,23 +341,20 @@ class AppSettings {
   });
 
   factory AppSettings.fromJson(Map<String, dynamic> j) => AppSettings(
-        restaurantName: j['restaurant_name'],
-        serviceChargePercent: _toDouble(j['service_charge_percent']),
-        serviceChargeDineInOnly: _toBool(j['service_charge_dine_in_only']),
-        receiptFooter: j['receipt_footer'] ?? '',
-      );
+    restaurantName: j['restaurant_name'],
+    serviceChargePercent: _toDouble(j['service_charge_percent']),
+    serviceChargeDineInOnly: _toBool(j['service_charge_dine_in_only']),
+    receiptFooter: j['receipt_footer'] ?? '',
+  );
 
   Map<String, dynamic> toJson() => {
-        'restaurant_name': restaurantName,
-        'service_charge_percent': serviceChargePercent,
-        'service_charge_dine_in_only': serviceChargeDineInOnly,
-        'receipt_footer': receiptFooter,
-      };
+    'restaurant_name': restaurantName,
+    'service_charge_percent': serviceChargePercent,
+    'service_charge_dine_in_only': serviceChargeDineInOnly,
+    'receipt_footer': receiptFooter,
+  };
 }
 
-// ======================= CART =======================
-
-/// Cart ki ek line: item + selected toppings + qty + comment
 class CartItem {
   final MenuItem item;
   final List<ModifierOption> modifiers;
@@ -397,11 +373,82 @@ class CartItem {
 
   double get lineTotal => unitTotal * quantity;
 
-  /// Backend ko yahi format jayega (POST /api/orders -> items[])
   Map<String, dynamic> toJson() => {
-        'menu_item_id': item.id,
-        'quantity': quantity,
-        'note': note.isEmpty ? null : note,
-        'modifier_option_ids': modifiers.map((m) => m.id).toList(),
-      };
+    'menu_item_id': item.id,
+    'quantity': quantity,
+    'note': note.isEmpty ? null : note,
+    'modifier_option_ids': modifiers.map((m) => m.id).toList(),
+  };
+}
+
+enum OrderStatus { open, billed, paid, cancelled }
+
+enum KitchenStatus { pending, preparing, ready, served }
+
+class PlacedOrder {
+  final int id;
+  final OrderType type;
+  final Hall? hall;
+  final DiningTable? table;
+  final Staff server;
+  final String customerName;
+  final String customerPhone;
+  final List<CartItem> items;
+  final DateTime createdAt;
+
+  OrderStatus status;
+  KitchenStatus kitchenStatus;
+
+  PaymentMethod? paymentMethod;
+  double discount = 0;
+  double serviceCharge = 0;
+  double taxPercent = 0;
+  double tax = 0;
+  double total = 0;
+  double amountReceived = 0;
+  String paymentReference = '';
+  DateTime? closedAt;
+
+  PlacedOrder({
+    required this.id,
+    required this.type,
+    this.hall,
+    this.table,
+    required this.server,
+    this.customerName = '',
+    this.customerPhone = '',
+    required this.items,
+    this.status = OrderStatus.open,
+    this.kitchenStatus = KitchenStatus.pending,
+    DateTime? createdAt,
+  }) : createdAt = createdAt ?? DateTime.now();
+
+  bool get isDineIn => type == OrderType.dineIn;
+  bool get isPaid => status == OrderStatus.paid;
+
+  bool get isActive =>
+      status == OrderStatus.open || status == OrderStatus.billed;
+
+  int get itemCount => items.fold(0, (sum, c) => sum + c.quantity);
+  double get subtotal => items.fold(0.0, (sum, c) => sum + c.lineTotal);
+  double get change => amountReceived - total;
+
+  String get label => isDineIn
+      ? '${hall?.name ?? 'Hall'} · T${table?.tableNumber ?? '-'}'
+      : (customerName.isEmpty ? 'Takeaway' : 'Takeaway · $customerName');
+
+  String get title => '#$id · $label';
+
+  String get statusLabel => switch (status) {
+    OrderStatus.paid => 'Paid · ${paymentMethod?.name ?? ''}',
+    OrderStatus.cancelled => 'Cancelled',
+    OrderStatus.billed => 'Bill printed · Payment baqi',
+    OrderStatus.open => switch (kitchenStatus) {
+      KitchenStatus.pending => 'Sent to kitchen',
+      KitchenStatus.preparing => 'Preparing',
+      KitchenStatus.ready =>
+      isDineIn ? 'Ready to serve' : 'Ready · Waiting for pickup',
+      KitchenStatus.served => 'Served · Payment baqi',
+    },
+  };
 }
