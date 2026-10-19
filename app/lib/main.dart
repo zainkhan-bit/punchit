@@ -1,23 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
-import 'core/app_theme.dart';
-import 'data/mock_pos_repository.dart';
-import 'data/pos_repository.dart';
-import 'providers/order_provider.dart';
 import 'screens/login_screen.dart';
+import 'theme/app_theme.dart';
 
 void main() {
-  runApp(
-    MultiProvider(
-      providers: [
-
-        Provider<PosRepository>(create: (_) => MockPosRepository()),
-        ChangeNotifierProvider(create: (_) => OrderProvider()),
-      ],
-      child: const PunchItApp(),
-    ),
-  );
+  runApp(const PunchItApp());
 }
 
 class PunchItApp extends StatelessWidget {
@@ -26,8 +13,8 @@ class PunchItApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'PunchIt',
       debugShowCheckedModeBanner: false,
+      title: 'PunchIt',
       theme: AppTheme.light,
       home: const LoginScreen(),
     );

@@ -4,6 +4,7 @@ MAD (Mobile Application Development) group project.
 Server ID + PIN se login, Dine-in / Takeaway, menu se items punch, toppings + comment, Hall / Table / Server select, aur kitchen stations pe dockets.
 **Manager / Owner Panel** se restaurant khud apna menu, prices, toppings, tax (Cash / Card alag), stations, tables aur staff set karta hai. Kuch bhi code mein hard-coded nahi.
 
+- **🎨 Figma Prototype:** [PunchIt — Restaurant POS Prototype](https://www.figma.com/design/9FR4QHRafelroeX5xowQky/PunchIt-%E2%80%94-Restaurant-POS-Prototype?node-id=4-9&t=f21O1SKP7F0Lviyu-1)
 - **Frontend:** Flutter (Dart), Android Studio
 - **Backend:** Node.js + Express (Phase 2)
 - **Database:** MySQL (`database/schema.sql`)
