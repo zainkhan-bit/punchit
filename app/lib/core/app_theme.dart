@@ -1,31 +1,66 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  static const primary = Color(0xFFE65100); // orange
-  static const free = Color(0xFF2E7D32); // green
-  static const occupied = Color(0xFFC62828); // red
-  static const billed = Color(0xFFF9A825); // yellow
+  AppColors._();
+
+  static const background = Color(0xFFF8F7F3);
+  static const card = Colors.white;
+  static const primary = Color(0xFFB94620);
+  static const darkGreen = Color(0xFF1F3B2B);
+  static const green = Color(0xFF2A7152);
+  static const successBg = Color(0xFFE9F4EA);
+  static const peach = Color(0xFFFFF0E5);
+  static const warningBg = Color(0xFFFFF6DC);
+  static const warningText = Color(0xFF8A6A1F);
+  static const textPrimary = Color(0xFF1C1C1A);
+  static const textSecondary = Color(0xFF8A8A84);
+  static const divider = Color(0xFFE6E4DE);
+
+  static const free = green;
+  static const occupied = primary;
+  static const billed = Color(0xFFC9891A);
 }
 
 class AppTheme {
-  static ThemeData get light => ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
-        appBarTheme: const AppBarTheme(centerTitle: false),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            minimumSize: const Size(64, 52),
-            textStyle:
-                const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-          ),
+  static ThemeData get light {
+    final base = ThemeData(
+      useMaterial3: true,
+      scaffoldBackgroundColor: AppColors.background,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: AppColors.primary,
+        primary: AppColors.primary,
+        surface: AppColors.background,
+      ),
+      appBarTheme: const AppBarTheme(
+        centerTitle: false,
+        backgroundColor: AppColors.background,
+        surfaceTintColor: Colors.transparent,
+      ),
+      cardTheme: CardThemeData(
+        color: AppColors.card,
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          minimumSize: const Size(64, 52),
+          textStyle:
+          const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
-        inputDecorationTheme: const InputDecorationTheme(
-          border: OutlineInputBorder(),
-        ),
-      );
+      ),
+      inputDecorationTheme: const InputDecorationTheme(
+        border: OutlineInputBorder(),
+      ),
+    );
+    return base.copyWith(
+      textTheme: base.textTheme.apply(
+        bodyColor: AppColors.textPrimary,
+        displayColor: AppColors.textPrimary,
+      ),
+    );
+  }
 }
 
-/// Rs 1,450 format
 String rs(double amount) {
   final s = amount.toStringAsFixed(0);
   final buf = StringBuffer();
@@ -36,3 +71,22 @@ String rs(double amount) {
   }
   return 'Rs ${buf.toString()}';
 }
+
+const _weekdays = [
+  'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday',
+];
+const _months = [
+  'January', 'February', 'March', 'April', 'May', 'June', 'July',
+  'August', 'September', 'October', 'November', 'December',
+];
+
+String timeLabel(DateTime t) {
+  final hour = t.hour % 12 == 0 ? 12 : t.hour % 12;
+  return '$hour:${t.minute.toString().padLeft(2, '0')} ${t.hour < 12 ? 'AM' : 'PM'}';
+}
+
+String longDateLabel(DateTime d) =>
+    '${_weekdays[d.weekday - 1]}, ${d.day} ${_months[d.month - 1]}';
+
+String shortDateLabel(DateTime d) =>
+    '${d.day} ${_months[d.month - 1].substring(0, 3)} ${d.year}';
