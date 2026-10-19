@@ -1,21 +1,15 @@
+import '../core/bill_calculator.dart';
 import '../models/models.dart';
 import 'pos_repository.dart';
 
-/// Dummy data, memory mein. Manager panel se jo add/edit karo woh
-/// server screens pe foran dikhta hai (app band karne pe reset ho jata hai).
-/// Wohi sample data jo database/schema.sql mein hai.
-///
-/// Jo rules yahan hain (e.g. "category mein products hain to delete nahi"),
-/// backend mein bhi wohi lagane hain.
 class MockPosRepository implements PosRepository {
-  static const _delay = Duration(milliseconds: 250); // fake network
+  static const _delay = Duration(milliseconds: 250);
 
   int _nextId = 1000;
   int _newId() => _nextId++;
 
   int _nextOrderId = 1001;
 
-  // ---------------- Staff (PIN sab ka 1234) ----------------
   final List<Staff> _staff = [
     const Staff(id: 1, employeeCode: 'S101', name: 'Ali', role: 'server'),
     const Staff(id: 2, employeeCode: 'S102', name: 'Hamza', role: 'server'),
@@ -26,7 +20,6 @@ class MockPosRepository implements PosRepository {
   ];
   final Map<int, String> _pins = {1: '1234', 2: '1234', 3: '1234', 4: '1234', 5: '1234', 6: '1234'};
 
-  // ---------------- Stations ----------------
   final List<Station> _stations = [
     const Station(id: 1, name: 'Pizza Make Table'),
     const Station(id: 2, name: 'Starter Station'),
@@ -34,7 +27,6 @@ class MockPosRepository implements PosRepository {
     const Station(id: 4, name: 'Cut Table', type: StationType.expo),
   ];
 
-  // ---------------- Toppings ----------------
   final List<ModifierGroup> _groups = [
     const ModifierGroup(id: 1, name: 'Crust', minSelect: 1, maxSelect: 1, options: [
       ModifierOption(id: 1, name: 'Regular'),
@@ -55,15 +47,13 @@ class MockPosRepository implements PosRepository {
     ]),
   ];
 
-  // ---------------- Menu ----------------
   final List<MenuCategory> _categories = [
     const MenuCategory(id: 1, name: 'Pizza', stationId: 1, sortOrder: 1),
     const MenuCategory(id: 2, name: 'Starters', stationId: 2, sortOrder: 2),
     const MenuCategory(id: 3, name: 'Burgers', stationId: 3, sortOrder: 3),
-    const MenuCategory(id: 4, name: 'Drinks', sortOrder: 4), // station nahi = sirf Cut Table
+    const MenuCategory(id: 4, name: 'Drinks', sortOrder: 4),
   ];
 
-  // Items ke groups sirf id ke liye store hain, read karte waqt latest groups lagte hain
   late final List<MenuItem> _items = [
     _item(1, 1, 'Chicken Tikka Pizza (M)', 1450, groups: [1, 2]),
     _item(2, 1, 'Fajita Pizza (M)', 1450, groups: [1, 2]),
@@ -90,7 +80,6 @@ class MockPosRepository implements PosRepository {
     );
   }
 
-  // ---------------- Floor ----------------
   final List<Hall> _halls = [
     const Hall(id: 1, name: 'Main Hall'),
     const Hall(id: 2, name: 'Family Hall'),
@@ -107,11 +96,66 @@ class MockPosRepository implements PosRepository {
     const DiningTable(id: 8, hallId: 2, tableNumber: 4, capacity: 4),
   ];
 
-  // ---------------- Tax & Settings (sample values, owner khud set karega) ----------------
   final List<PaymentMethod> _paymentMethods = [
     const PaymentMethod(id: 1, name: 'Cash', taxPercent: 16),
     const PaymentMethod(id: 2, name: 'Card', taxPercent: 5),
   ];
+
+  late final List<PlacedOrder> _orders = [
+    PlacedOrder(
+      id: 999,
+      type: OrderType.takeaway,
+      server: _staff[1],
+      customerName: 'Usman',
+      items: [CartItem(item: _items[6], modifiers: [], quantity: 2)],
+      kitchenStatus: KitchenStatus.preparing,
+      createdAt: DateTime.now().subtract(const Duration(minutes: 6)),
+    ),
+    PlacedOrder(
+      id: 998,
+      type: OrderType.dineIn,
+      hall: _halls[0],
+      table: _tables[1],
+      server: _staff[0],
+      items: [
+        CartItem(item: _items[0], modifiers: [_groups[0].options[0]]),
+        CartItem(item: _items[8], modifiers: [], quantity: 2),
+      ],
+      kitchenStatus: KitchenStatus.ready,
+      createdAt: DateTime.now().subtract(const Duration(minutes: 18)),
+    ),
+    PlacedOrder(
+      id: 997,
+      type: OrderType.dineIn,
+      hall: _halls[1],
+      table: _tables[5],
+      server: _staff[2],
+      items: [
+        CartItem(item: _items[7], modifiers: []),
+        CartItem(item: _items[4], modifiers: []),
+      ],
+      status: OrderStatus.billed,
+      kitchenStatus: KitchenStatus.served,
+      createdAt: DateTime.now().subtract(const Duration(minutes: 40)),
+    ),
+    _paidSample(),
+  ];
+
+  PlacedOrder _paidSample() {
+    final o = PlacedOrder(
+      id: 996,
+      type: OrderType.dineIn,
+      hall: _halls[0],
+      table: _tables[0],
+      server: _staff[0],
+      items: [CartItem(item: _items[2], modifiers: [_groups[0].options[0]])],
+      kitchenStatus: KitchenStatus.served,
+      createdAt: DateTime.now().subtract(const Duration(minutes: 95)),
+    );
+    _applyPayment(o, _paymentMethods[0], 0, 1500, '');
+    o.closedAt = o.createdAt.add(const Duration(minutes: 35));
+    return o;
+  }
 
   AppSettings _settings = const AppSettings(
     restaurantName: 'PunchIt Demo Restaurant',
@@ -120,13 +164,10 @@ class MockPosRepository implements PosRepository {
     receiptFooter: 'Thank you! Dobara zaroor aayein.',
   );
 
-  // ================= Helpers =================
-
   void _require(bool ok, String message) {
     if (!ok) throw Exception(message);
   }
 
-  /// list mein id match ho to replace, warna naya id de ke add
   T _upsert<T>(List<T> list, T value, int Function(T) idOf, T Function(int) withId) {
     final id = idOf(value);
     if (id == 0) {
@@ -140,8 +181,6 @@ class MockPosRepository implements PosRepository {
     return value;
   }
 
-  // ================= Auth =================
-
   @override
   Future<Staff?> login(String employeeCode, String pin) async {
     await Future.delayed(_delay);
@@ -154,8 +193,6 @@ class MockPosRepository implements PosRepository {
     return null;
   }
 
-  // ================= Order taking =================
-
   @override
   Future<List<MenuCategory>> getCategories() async {
     await Future.delayed(_delay);
@@ -165,7 +202,6 @@ class MockPosRepository implements PosRepository {
   @override
   Future<List<MenuItem>> getMenuItems() async {
     await Future.delayed(_delay);
-    // Har item ko latest topping groups ke saath lautao
     return _items.map((it) {
       final ids = it.modifierGroups.map((g) => g.id).toSet();
       return it.withGroups(_groups.where((g) => ids.contains(g.id)).toList());
@@ -203,14 +239,92 @@ class MockPosRepository implements PosRepository {
     await Future.delayed(_delay);
     _require(items.isNotEmpty, 'Kam az kam 1 item add karo');
 
+    final server = _staff.where((s) => s.id == serverId).firstOrNull;
+    _require(server != null, 'Server select karo');
+
+    Hall? hall;
+    DiningTable? table;
     if (type == OrderType.dineIn) {
       final i = _tables.indexWhere((t) => t.id == tableId);
       _require(i != -1, 'Table select karo');
       final t = _tables[i];
       _require(t.status == TableStatus.free, 'Table ${t.tableNumber} already occupied hai');
-      _tables[i] = t.withStatus(TableStatus.occupied);
+      table = t.withStatus(TableStatus.occupied);
+      _tables[i] = table;
+      hall = _halls.firstWhere((h) => h.id == t.hallId);
     }
-    return _nextOrderId++;
+
+    final order = PlacedOrder(
+      id: _nextOrderId++,
+      type: type,
+      hall: hall,
+      table: table,
+      server: server!,
+      customerName: customerName ?? '',
+      customerPhone: customerPhone ?? '',
+      items: List.of(items),
+    );
+    _orders.insert(0, order);
+    return order.id;
+  }
+
+  @override
+  Future<List<PlacedOrder>> getOrders({bool activeOnly = false}) async {
+    await Future.delayed(_delay);
+    final list = activeOnly ? _orders.where((o) => o.isActive) : _orders;
+    return list.toList()..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  }
+
+  @override
+  Future<void> updateKitchenStatus(int orderId, KitchenStatus status) async {
+    await Future.delayed(_delay);
+    final o = _orders.where((x) => x.id == orderId).firstOrNull;
+    _require(o != null, 'Order nahi mila');
+    _require(o!.isActive, 'Order #$orderId band ho chuka hai');
+    o.kitchenStatus = status;
+  }
+
+  @override
+  Future<PlacedOrder> payOrder({
+    required int orderId,
+    required PaymentMethod method,
+    double discount = 0,
+    required double amountReceived,
+    String reference = '',
+  }) async {
+    await Future.delayed(_delay);
+    final o = _orders.where((x) => x.id == orderId).firstOrNull;
+    _require(o != null, 'Order nahi mila');
+    _require(o!.isActive, 'Order #$orderId ki payment pehle ho chuki hai');
+    _require(method.isActive, '${method.name} abhi band hai');
+    _applyPayment(o, method, discount, amountReceived, reference.trim());
+
+    final i = _tables.indexWhere((t) => t.id == o.table?.id);
+    if (i != -1) _tables[i] = _tables[i].withStatus(TableStatus.free);
+    return o;
+  }
+
+  void _applyPayment(PlacedOrder o, PaymentMethod method, double discount,
+      double amountReceived, String reference) {
+    final bill = BillCalculator.calculate(
+      subtotal: o.subtotal,
+      discount: discount,
+      method: method,
+      settings: _settings,
+      isDineIn: o.isDineIn,
+    );
+    _require(amountReceived >= bill.total, 'Received amount bill ke total se kam hai');
+    o
+      ..paymentMethod = method
+      ..discount = bill.discount
+      ..serviceCharge = bill.serviceCharge
+      ..taxPercent = bill.taxPercent
+      ..tax = bill.tax
+      ..total = bill.total
+      ..amountReceived = amountReceived
+      ..paymentReference = reference
+      ..status = OrderStatus.paid
+      ..closedAt = DateTime.now();
   }
 
   @override
@@ -225,8 +339,6 @@ class MockPosRepository implements PosRepository {
     return List.of(_paymentMethods);
   }
 
-  // ================= Admin: Menu =================
-
   @override
   Future<MenuCategory> saveCategory(MenuCategory c) async {
     await Future.delayed(_delay);
@@ -238,7 +350,7 @@ class MockPosRepository implements PosRepository {
     );
     final clean = MenuCategory(id: c.id, name: name, stationId: c.stationId, sortOrder: c.sortOrder);
     return _upsert<MenuCategory>(_categories, clean, (x) => x.id,
-        (id) => MenuCategory(id: id, name: name, stationId: c.stationId, sortOrder: c.sortOrder));
+            (id) => MenuCategory(id: id, name: name, stationId: c.stationId, sortOrder: c.sortOrder));
   }
 
   @override
@@ -261,22 +373,20 @@ class MockPosRepository implements PosRepository {
       '"$name" naam ka product pehle se hai',
     );
     MenuItem build(int id) => MenuItem(
-          id: id,
-          categoryId: item.categoryId,
-          name: name,
-          price: item.price,
-          stationId: item.stationId,
-          isAvailable: item.isAvailable,
-          modifierGroups: item.modifierGroups,
-        );
+      id: id,
+      categoryId: item.categoryId,
+      name: name,
+      price: item.price,
+      stationId: item.stationId,
+      isAvailable: item.isAvailable,
+      modifierGroups: item.modifierGroups,
+    );
     return _upsert<MenuItem>(_items, build(item.id), (x) => x.id, build);
   }
 
   @override
   Future<void> deleteMenuItem(int id) async {
     await Future.delayed(_delay);
-    // Backend mein: agar item kisi purane order mein hai to delete ki jagah
-    // is_available = false karo (purane bills ke liye record zaroori hai)
     _items.removeWhere((i) => i.id == id);
   }
 
@@ -296,11 +406,10 @@ class MockPosRepository implements PosRepository {
     _require(g.minSelect >= 0 && g.minSelect <= g.maxSelect, 'Min select, max se zyada nahi ho sakta');
     _require(g.minSelect <= g.options.length, 'Min select options se zyada hai');
 
-    // Naye options (id 0) ko id do
     final options = g.options
         .map((o) => o.id == 0
-            ? ModifierOption(id: _newId(), name: o.name.trim(), price: o.price, isAvailable: o.isAvailable)
-            : o)
+        ? ModifierOption(id: _newId(), name: o.name.trim(), price: o.price, isAvailable: o.isAvailable)
+        : o)
         .toList();
 
     ModifierGroup build(int id) =>
@@ -312,7 +421,6 @@ class MockPosRepository implements PosRepository {
   Future<void> deleteModifierGroup(int id) async {
     await Future.delayed(_delay);
     _groups.removeWhere((g) => g.id == id);
-    // Jin products pe yeh group laga tha unse hata do
     for (var i = 0; i < _items.length; i++) {
       final it = _items[i];
       if (it.modifierGroups.any((g) => g.id == id)) {
@@ -320,8 +428,6 @@ class MockPosRepository implements PosRepository {
       }
     }
   }
-
-  // ================= Admin: Kitchen =================
 
   @override
   Future<List<Station>> getStations() async {
@@ -337,13 +443,13 @@ class MockPosRepository implements PosRepository {
     final ip = (s.printerIp ?? '').trim();
     _require(ip.isEmpty || RegExp(r'^\d{1,3}(\.\d{1,3}){3}$').hasMatch(ip), 'Printer IP sahi likho (e.g. 192.168.1.50)');
     Station build(int id) => Station(
-          id: id,
-          name: name,
-          type: s.type,
-          printerIp: ip.isEmpty ? null : ip,
-          printerPort: s.printerPort,
-          isActive: s.isActive,
-        );
+      id: id,
+      name: name,
+      type: s.type,
+      printerIp: ip.isEmpty ? null : ip,
+      printerPort: s.printerPort,
+      isActive: s.isActive,
+    );
     return _upsert<Station>(_stations, build(s.id), (x) => x.id, build);
   }
 
@@ -351,7 +457,6 @@ class MockPosRepository implements PosRepository {
   Future<void> deleteStation(int id) async {
     await Future.delayed(_delay);
     _stations.removeWhere((s) => s.id == id);
-    // DB jaisa: ON DELETE SET NULL
     for (var i = 0; i < _categories.length; i++) {
       final c = _categories[i];
       if (c.stationId == id) {
@@ -372,8 +477,6 @@ class MockPosRepository implements PosRepository {
       }
     }
   }
-
-  // ================= Admin: Floor =================
 
   @override
   Future<Hall> saveHall(Hall h) async {
@@ -400,15 +503,14 @@ class MockPosRepository implements PosRepository {
       !_tables.any((x) => x.id != t.id && x.hallId == t.hallId && x.tableNumber == t.tableNumber),
       'Is hall mein Table ${t.tableNumber} pehle se hai',
     );
-    // Status edit nahi hota, purana status rakho
     final old = _tables.where((x) => x.id == t.id).firstOrNull;
     DiningTable build(int id) => DiningTable(
-          id: id,
-          hallId: t.hallId,
-          tableNumber: t.tableNumber,
-          capacity: t.capacity,
-          status: old?.status ?? TableStatus.free,
-        );
+      id: id,
+      hallId: t.hallId,
+      tableNumber: t.tableNumber,
+      capacity: t.capacity,
+      status: old?.status ?? TableStatus.free,
+    );
     return _upsert<DiningTable>(_tables, build(t.id), (x) => x.id, build);
   }
 
@@ -419,8 +521,6 @@ class MockPosRepository implements PosRepository {
     _require(t.status == TableStatus.free, 'Table ${t.tableNumber} pe order chal raha hai, abhi delete nahi ho sakti');
     _tables.removeWhere((x) => x.id == id);
   }
-
-  // ================= Admin: Staff =================
 
   @override
   Future<List<Staff>> getAllStaff() async {
@@ -441,7 +541,6 @@ class MockPosRepository implements PosRepository {
     if (s.id == 0) _require(newPin != null, 'Naye staff ka PIN zaroori hai');
     if (newPin != null) _require(RegExp(r'^\d{4}$').hasMatch(newPin), 'PIN 4 digits ka ho');
 
-    // Aakhri active manager/owner ko inactive ya server nahi bana sakte
     final old = _staff.where((x) => x.id == s.id).firstOrNull;
     final wasActiveAdmin = old != null && old.isActive && old.isAdmin;
     final staysActiveAdmin = s.isActive && s.isAdmin;
@@ -455,8 +554,6 @@ class MockPosRepository implements PosRepository {
     if (newPin != null) _pins[saved.id] = newPin;
     return saved;
   }
-
-  // ================= Admin: Tax & Settings =================
 
   @override
   Future<PaymentMethod> savePaymentMethod(PaymentMethod m) async {
