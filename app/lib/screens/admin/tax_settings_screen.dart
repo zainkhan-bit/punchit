@@ -7,8 +7,6 @@ import '../../data/pos_repository.dart';
 import '../../models/models.dart';
 import '../../widgets/admin_widgets.dart';
 
-/// Payment methods ka tax (Cash / Card alag), service charge, restaurant info.
-/// Tax rates owner apne area ke hisaab se khud set kare.
 class TaxSettingsScreen extends StatefulWidget {
   const TaxSettingsScreen({super.key});
 
@@ -62,7 +60,6 @@ class _TaxSettingsScreenState extends State<TaxSettingsScreen> {
     });
   }
 
-  /// Form ki abhi wali values (save se pehle preview ke liye)
   AppSettings get _draftSettings => AppSettings(
         restaurantName: _name.text.trim(),
         serviceChargePercent: double.tryParse(_service.text.trim()) ?? 0,
@@ -125,7 +122,6 @@ class _TaxSettingsScreenState extends State<TaxSettingsScreen> {
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-                  // ---------- Payment methods ----------
                   Row(
                     children: [
                       Expanded(
@@ -167,14 +163,12 @@ class _TaxSettingsScreenState extends State<TaxSettingsScreen> {
                     ),
                   ),
 
-                  // ---------- Live example ----------
                   const SizedBox(height: 12),
                   _ExampleBill(
                     methods: _methods.where((m) => m.isActive).toList(),
                     settings: _draftSettings,
                   ),
 
-                  // ---------- Restaurant settings ----------
                   const Divider(height: 40),
                   Text('Restaurant', style: t.titleMedium),
                   const SizedBox(height: 12),
@@ -197,7 +191,7 @@ class _TaxSettingsScreenState extends State<TaxSettingsScreen> {
                       helperText: '0 = service charge nahi',
                     ),
                     validator: V.percent,
-                    onChanged: (_) => setState(() {}), // preview update
+                    onChanged: (_) => setState(() {}),
                   ),
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
@@ -240,7 +234,6 @@ class _TaxSettingsScreenState extends State<TaxSettingsScreen> {
   }
 }
 
-/// Rs 1,000 ke dine-in bill pe har method ka total
 class _ExampleBill extends StatelessWidget {
   final List<PaymentMethod> methods;
   final AppSettings settings;
