@@ -2,34 +2,28 @@ import 'package:flutter/foundation.dart';
 
 import '../models/models.dart';
 
-/// Current order ki state: login wala server, type, table, cart.
 class OrderProvider extends ChangeNotifier {
   Staff? loggedInStaff;
 
   OrderType? orderType;
 
-  // Dine-in details (pehla item add hone ke baad select hoti hain)
   Hall? hall;
   DiningTable? table;
   Staff? server;
 
-  // Takeaway details
   String customerName = '';
   String customerPhone = '';
 
   final List<CartItem> cart = [];
 
-  // ---------- Getters ----------
   int get itemCount => cart.fold(0, (sum, c) => sum + c.quantity);
 
   double get subtotal => cart.fold(0.0, (sum, c) => sum + c.lineTotal);
 
   bool get isDineIn => orderType == OrderType.dineIn;
 
-  /// Dine-in mein hall + table + server set hain?
   bool get hasTableDetails => !isDineIn || (table != null && server != null);
 
-  // ---------- Actions ----------
   void login(Staff staff) {
     loggedInStaff = staff;
     notifyListeners();
@@ -43,7 +37,7 @@ class OrderProvider extends ChangeNotifier {
   void startOrder(OrderType type) {
     resetOrder(notify: false);
     orderType = type;
-    server = loggedInStaff; // default: jo login hai
+    server = loggedInStaff;
     notifyListeners();
   }
 
