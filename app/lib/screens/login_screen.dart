@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../core/app_theme.dart';
 import '../data/pos_repository.dart';
+import '../models/models.dart';
 import '../providers/order_provider.dart';
+import '../widgets/ui_kit.dart';
 import 'admin/admin_home_screen.dart';
+import 'kitchen/kitchen_queue_screen.dart';
 import 'order_type_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -15,154 +19,126 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _codeCtrl = TextEditingController();
-  String _pin = '';
+  final _pinCtrl = TextEditingController();
   bool _loading = false;
   String? _error;
 
   @override
   void dispose() {
     _codeCtrl.dispose();
+    _pinCtrl.dispose();
     super.dispose();
   }
 
-  void _tapDigit(String d) {
-    if (_pin.length >= 4) return;
-    setState(() {
-      _pin += d;
-      _error = null;
-    });
-    if (_pin.length == 4) _login();
-  }
-
-  void _backspace() {
-    if (_pin.isEmpty) return;
-    setState(() => _pin = _pin.substring(0, _pin.length - 1));
-  }
-
   Future<void> _login() async {
-    if (_codeCtrl.text.trim().isEmpty) {
-      setState(() {
-        _error = 'Server ID enter karo';
-        _pin = '';
-      });
+    final code = _codeCtrl.text.trim();
+    final pin = _pinCtrl.text.trim();
+    if (code.isEmpty) {
+      setState(() => _error = 'Employee ID enter karo');
       return;
     }
-    setState(() => _loading = true);
-    final repo = context.read<PosRepository>();
-    final staff = await repo.login(_codeCtrl.text, _pin);
+    if (!RegExp(r'^\d{4}$').hasMatch(pin)) {
+      setState(() => _error = 'PIN 4 digits ka hai');
+      return;
+    }
+
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    final staff = await context.read<PosRepository>().login(code, pin);
     if (!mounted) return;
 
     if (staff == null) {
       setState(() {
         _loading = false;
-        _error = 'Galat Server ID ya PIN';
-        _pin = '';
+        _error = 'Galat Employee ID ya PIN';
+        _pinCtrl.clear();
       });
       return;
     }
+
     context.read<OrderProvider>().login(staff);
-    // Manager / Owner -> Admin panel, baqi sab -> order screen
-    Navigator.of(context).pushReplacement(
-      staff.isAdmin
-          ? MaterialPageRoute<void>(builder: (_) => const AdminHomeScreen())
-          : OrderTypeScreen.route(),
-    );
+    final Route<void> next = staff.isAdmin
+        ? MaterialPageRoute(builder: (_) => const AdminHomeScreen())
+        : staff.role == StaffRoles.kitchen
+        ? MaterialPageRoute(builder: (_) => const KitchenQueueScreen())
+        : OrderTypeScreen.route();
+    Navigator.of(context).pushReplacement(next);
   }
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     return Scaffold(
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 380),
-              child: Column(
+        child: Column(
+          children: [
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.all(16),
                 children: [
-                  Icon(Icons.restaurant_menu, size: 64, color: cs.primary),
-                  const SizedBox(height: 8),
-                  Text('PunchIt',
-                      style: Theme.of(context).textTheme.headlineMedium),
-                  const SizedBox(height: 4),
-                  const Text('Demo: Server S101, Manager M201, Owner O301\nPIN 1234',
-                      textAlign: TextAlign.center),
-                  const SizedBox(height: 24),
-                  TextField(
-                    controller: _codeCtrl,
-                    textCapitalization: TextCapitalization.characters,
-                    decoration: const InputDecoration(
-                      labelText: 'Server ID',
-                      prefixIcon: Icon(Icons.badge_outlined),
+                  const Text(
+                    'PunchIt',
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  ),
+                  const Text(
+                    'RESTAURANT WORKSPACE',
+                    style: TextStyle(
+                      fontSize: 11,
+                      letterSpacing: 1,
+                      color: AppColors.textSecondary,
                     ),
                   ),
                   const SizedBox(height: 20),
-                  // PIN dots
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(4, (i) {
-                      final filled = i < _pin.length;
-                      return Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 8),
-                        width: 16,
-                        height: 16,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: filled ? cs.primary : Colors.transparent,
-                          border: Border.all(color: cs.primary, width: 2),
-                        ),
-                      );
-                    }),
+                  const HeroCard(
+                    icon: Icons.room_service_outlined,
+                    title: 'Good food.\nGreat service.',
+                    subtitle: 'Your shift, your tables, your orders.\nEverything in one place.',
                   ),
-                  SizedBox(
-                    height: 32,
-                    child: Center(
-                      child: _loading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2))
-                          : Text(_error ?? '',
-                              style: TextStyle(color: cs.error)),
-                    ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Welcome back',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
-                  _PinPad(onDigit: _tapDigit, onBackspace: _backspace),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Sign in with your employee ID and PIN',
+                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  ),
+                  const SizedBox(height: 16),
+                  LabeledField(
+                    label: 'Employee ID',
+                    controller: _codeCtrl,
+                    hint: 'S101',
+                    textCapitalization: TextCapitalization.characters,
+                  ),
+                  const SizedBox(height: 12),
+                  LabeledField(
+                    label: '4-digit PIN',
+                    controller: _pinCtrl,
+                    hint: '••••',
+                    keyboardType: TextInputType.number,
+                    obscureText: true,
+                    maxLength: 4,
+                    onSubmitted: (_) => _login(),
+                  ),
+                  const SizedBox(height: 12),
+                  if (_error != null) NoteBanner(text: _error!, type: NoteType.error),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Demo: S101 Server · K101 Kitchen · M201 Manager · O301 Owner · PIN 1234',
+                    style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                  ),
                 ],
               ),
             ),
-          ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: PrimaryButton(label: 'Sign in', loading: _loading, onPressed: _login),
+            ),
+          ],
         ),
       ),
-    );
-  }
-}
-
-class _PinPad extends StatelessWidget {
-  final void Function(String) onDigit;
-  final VoidCallback onBackspace;
-
-  const _PinPad({required this.onDigit, required this.onBackspace});
-
-  @override
-  Widget build(BuildContext context) {
-    const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '<'];
-    return GridView.count(
-      crossAxisCount: 3,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      childAspectRatio: 1.6,
-      mainAxisSpacing: 8,
-      crossAxisSpacing: 8,
-      children: keys.map((k) {
-        if (k.isEmpty) return const SizedBox();
-        return OutlinedButton(
-          onPressed: () => k == '<' ? onBackspace() : onDigit(k),
-          child: k == '<'
-              ? const Icon(Icons.backspace_outlined)
-              : Text(k, style: const TextStyle(fontSize: 22)),
-        );
-      }).toList(),
     );
   }
 }
