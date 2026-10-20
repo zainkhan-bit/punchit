@@ -6,7 +6,6 @@ import '../../data/pos_repository.dart';
 import '../../models/models.dart';
 import '../../widgets/admin_widgets.dart';
 
-/// Topping groups: Crust (ek select, zaroori), Extra Toppings (max 5) waghera
 class ModifierGroupsScreen extends StatefulWidget {
   const ModifierGroupsScreen({super.key});
 
@@ -16,7 +15,7 @@ class ModifierGroupsScreen extends StatefulWidget {
 
 class _ModifierGroupsScreenState extends State<ModifierGroupsScreen> {
   List<ModifierGroup> _groups = [];
-  Map<int, int> _usedBy = {}; // groupId -> kitne products pe laga hai
+  Map<int, int> _usedBy = {};
   bool _loading = true;
 
   @override
@@ -114,8 +113,6 @@ class _ModifierGroupsScreenState extends State<ModifierGroupsScreen> {
     );
   }
 }
-
-// ======================= Group form =======================
 
 class ModifierGroupFormScreen extends StatefulWidget {
   final ModifierGroup? existing;
@@ -278,7 +275,6 @@ class _ModifierGroupFormScreenState extends State<ModifierGroupFormScreen> {
                 padding: EdgeInsets.symmetric(vertical: 12),
                 child: Text('e.g. Extra Cheese Rs 200, Olives Rs 100'),
               ),
-            // Drag kar ke order badlo
             ReorderableListView(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -372,7 +368,7 @@ class _OptionDialogState extends State<_OptionDialog> {
     Navigator.pop(
       context,
       ModifierOption(
-        id: widget.existing?.id ?? 0, // 0 = naya, save pe id milegi
+        id: widget.existing?.id ?? 0,
         name: _name.text.trim(),
         price: double.parse(_price.text.trim()),
         isAvailable: widget.existing?.isAvailable ?? true,
