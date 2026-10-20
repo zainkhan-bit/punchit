@@ -131,7 +131,7 @@ class _CategoryDialogState extends State<_CategoryDialog> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _name;
   late final TextEditingController _sort;
-  int _stationId = 0; // 0 = koi station nahi (Dropdown null value theek nahi dikhata)
+  int _stationId = 0;
   bool _saving = false;
   String? _error;
 
@@ -142,7 +142,6 @@ class _CategoryDialogState extends State<_CategoryDialog> {
     _name = TextEditingController(text: e?.name ?? '');
     _sort = TextEditingController(
         text: '${e?.sortOrder ?? widget.nextSortOrder}');
-    // Station list mein na ho (delete/expo) to null
     final sid = e?.stationId;
     _stationId = widget.stations.any((s) => s.id == sid) ? sid! : 0;
   }
@@ -181,7 +180,6 @@ class _CategoryDialogState extends State<_CategoryDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text(widget.existing == null ? 'New Category' : 'Edit Category'),
-      // Fixed width: dialog ke andar SegmentedButton/Dropdown safe rehte hain
       content: SizedBox(
         width: 400,
         child: Form(
