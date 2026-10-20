@@ -1,125 +1,174 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/app_theme.dart';
+import '../../data/pos_repository.dart';
+import '../../models/models.dart';
 import '../../providers/order_provider.dart';
+import '../../widgets/ui_kit.dart';
 import '../login_screen.dart';
 import '../order_type_screen.dart';
-import 'categories_screen.dart';
-import 'floor_screen.dart';
-import 'modifier_groups_screen.dart';
+import 'daily_report_screen.dart';
+import 'manager_nav.dart';
 import 'products_screen.dart';
+import 'restaurant_settings_screen.dart';
 import 'staff_screen.dart';
-import 'stations_screen.dart';
-import 'tax_settings_screen.dart';
 
-/// Manager / Owner ka panel. Yahan se sab kuch app ke andar hi set hota hai.
-class AdminHomeScreen extends StatelessWidget {
+class AdminHomeScreen extends StatefulWidget {
   const AdminHomeScreen({super.key});
+
+  @override
+  State<AdminHomeScreen> createState() => _AdminHomeScreenState();
+}
+
+class _AdminHomeScreenState extends State<AdminHomeScreen> {
+  double _sales = 0;
+  int _paidCount = 0;
+  int _activeCount = 0;
+  int _staffOnShift = 0;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final repo = context.read<PosRepository>();
+    final orders = await repo.getOrders();
+    final staff = await repo.getAllStaff();
+    if (!mounted) return;
+    final now = DateTime.now();
+    final paidToday = orders.where((o) {
+      final d = o.closedAt;
+      return o.isPaid &&
+          d != null &&
+          d.year == now.year &&
+          d.month == now.month &&
+          d.day == now.day;
+    }).toList();
+    setState(() {
+      _sales = paidToday.fold(0.0, (sum, o) => sum + o.total);
+      _paidCount = paidToday.length;
+      _activeCount = orders.where((o) => o.isActive).length;
+      _staffOnShift = staff.where((s) => s.isActive).length;
+      _loading = false;
+    });
+  }
+
+  Future<void> _open(Widget page) async {
+    await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page));
+    _load();
+  }
+
+  Future<void> _takeOrder() async {
+    await Navigator.of(context).push(OrderTypeScreen.route());
+    _load();
+  }
+
+  void _logout() {
+    context.read<OrderProvider>().logout();
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
+      (_) => false,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final staff = context.watch<OrderProvider>().loggedInStaff;
-    final cs = Theme.of(context).colorScheme;
-
-    final tiles = <_Tile>[
-      _Tile(Icons.category, 'Categories', 'Pizza, Burgers, Drinks',
-          (_) => const CategoriesScreen()),
-      _Tile(Icons.fastfood, 'Products', 'Naam, price, availability',
-          (_) => const ProductsScreen()),
-      _Tile(Icons.add_circle_outline, 'Toppings & Options',
-          'Crust, extra cheese, add-ons', (_) => const ModifierGroupsScreen()),
-      _Tile(Icons.percent, 'Tax & Settings', 'Cash / Card tax, service charge',
-          (_) => const TaxSettingsScreen()),
-      _Tile(Icons.print, 'Kitchen Stations', 'Printers aur routing',
-          (_) => const StationsScreen()),
-      _Tile(Icons.table_restaurant, 'Halls & Tables', 'Floor setup',
-          (_) => const FloorScreen()),
-      _Tile(Icons.badge, 'Staff', 'Servers, kitchen, managers, PIN',
-          (_) => const StaffScreen()),
-    ];
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Manager Panel - ${staff?.name ?? ''}'),
-        actions: [
-          IconButton(
-            tooltip: 'Logout',
-            icon: const Icon(Icons.logout),
-            onPressed: () {
-              context.read<OrderProvider>().logout();
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (_) => const LoginScreen()),
-                (_) => false,
-              );
-            },
-          ),
-        ],
+      bottomNavigationBar: RoleBottomNav(
+        items: managerNavItems,
+        currentIndex: 0,
+        onTap: (i) => openManagerTab(context, i),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              minimumSize: const Size.fromHeight(56),
-              backgroundColor: cs.primary,
-              foregroundColor: cs.onPrimary,
-            ),
-            icon: const Icon(Icons.point_of_sale),
-            label: const Text('Take Order'),
-            onPressed: () => Navigator.of(context).push(OrderTypeScreen.route()),
-          ),
-          const SizedBox(height: 20),
-          Text('Setup', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 260,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 1.15,
-            ),
-            itemCount: tiles.length,
-            itemBuilder: (_, i) {
-              final t = tiles[i];
-              return Card(
-                clipBehavior: Clip.antiAlias,
-                child: InkWell(
-                  onTap: () => Navigator.of(context)
-                      .push(MaterialPageRoute(builder: t.builder)),
-                  child: Padding(
-                    padding: const EdgeInsets.all(14),
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: _load,
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              Row(
+                children: [
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(t.icon, size: 32, color: cs.primary),
-                        const Spacer(),
-                        Text(t.title,
-                            style: Theme.of(context).textTheme.titleSmall),
-                        const SizedBox(height: 2),
-                        Text(t.subtitle,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodySmall),
+                        const Text(
+                          'Restaurant overview',
+                          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          '${staff?.name ?? ''} · ${staff == null ? '' : StaffRoles.label(staff.role)} · Today',
+                          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                        ),
                       ],
                     ),
                   ),
-                ),
-              );
-            },
+                  IconButton(
+                    tooltip: 'Logout',
+                    icon: const Icon(Icons.logout),
+                    onPressed: _logout,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              HeroCard(
+                icon: Icons.bar_chart,
+                title: _loading ? '-' : rs(_sales),
+                subtitle: "Today's sales · $_paidCount completed orders",
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: StatTile(
+                      label: 'Orders in progress',
+                      value: _loading ? '-' : '$_activeCount',
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: StatTile(
+                      label: 'Staff on shift',
+                      value: _loading ? '-' : '$_staffOnShift',
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              PrimaryButton(label: 'Take order', onPressed: _takeOrder),
+              const SizedBox(height: 20),
+              ListRowCard(
+                title: 'Menu management',
+                subtitle: 'Products, prices aur availability',
+                onTap: () => _open(const ProductsScreen()),
+              ),
+              const SizedBox(height: 10),
+              ListRowCard(
+                title: 'Staff & access',
+                subtitle: 'Accounts, roles aur PIN',
+                onTap: () => _open(const StaffScreen()),
+              ),
+              const SizedBox(height: 10),
+              ListRowCard(
+                title: 'Daily reports',
+                subtitle: 'Sales, payments aur order history',
+                onTap: () => _open(const DailyReportScreen()),
+              ),
+              const SizedBox(height: 10),
+              ListRowCard(
+                title: 'Restaurant settings',
+                subtitle: 'Tables, stations, tax aur toppings',
+                onTap: () => _open(const RestaurantSettingsScreen()),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
-}
-
-class _Tile {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final WidgetBuilder builder;
-
-  const _Tile(this.icon, this.title, this.subtitle, this.builder);
 }
