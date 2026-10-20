@@ -5,8 +5,6 @@ import '../../data/pos_repository.dart';
 import '../../models/models.dart';
 import '../../widgets/admin_widgets.dart';
 
-/// Kitchen stations + unke printers.
-/// item station = sirf apne items ka docket, expo (Cut Table) = poora order.
 class StationsScreen extends StatefulWidget {
   const StationsScreen({super.key});
 
@@ -181,7 +179,6 @@ class _StationDialogState extends State<_StationDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text(widget.existing == null ? 'New Station' : 'Edit Station'),
-      // Fixed width: dialog ke andar SegmentedButton/Dropdown safe rehte hain
       content: SizedBox(
         width: 400,
         child: Form(
