@@ -5,8 +5,9 @@ import '../core/app_theme.dart';
 import '../data/pos_repository.dart';
 import '../models/models.dart';
 import '../providers/order_provider.dart';
-import '../widgets/item_options_sheet.dart';
-import '../widgets/table_select_sheet.dart';
+import '../widgets/ui_kit.dart';
+import 'choose_table_screen.dart';
+import 'item_options_screen.dart';
 import 'order_summary_screen.dart';
 
 class MenuScreen extends StatefulWidget {
@@ -19,7 +20,7 @@ class MenuScreen extends StatefulWidget {
 class _MenuScreenState extends State<MenuScreen> {
   List<MenuCategory> _categories = [];
   List<MenuItem> _items = [];
-  int? _selectedCategoryId;
+  int _categoryIndex = 0;
   String _search = '';
   bool _loading = true;
 
@@ -37,7 +38,6 @@ class _MenuScreenState extends State<MenuScreen> {
     setState(() {
       _categories = cats;
       _items = items;
-      _selectedCategoryId = cats.isNotEmpty ? cats.first.id : null;
       _loading = false;
     });
   }
@@ -47,36 +47,36 @@ class _MenuScreenState extends State<MenuScreen> {
       final q = _search.toLowerCase();
       return _items.where((i) => i.name.toLowerCase().contains(q)).toList();
     }
-    return _items.where((i) => i.categoryId == _selectedCategoryId).toList();
+    if (_categories.isEmpty) return _items;
+    final catId = _categories[_categoryIndex].id;
+    return _items.where((i) => i.categoryId == catId).toList();
   }
 
-  Future<void> _onItemTap(MenuItem item) async {
-    if (!item.isAvailable) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${item.name} abhi available nahi')));
+  void _notAvailable(MenuItem item) {
+    ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${item.name} abhi available nahi')));
+  }
+
+  Future<void> _openOptions(MenuItem item) async {
+    if (!item.isAvailable) return _notAvailable(item);
+    final order = context.read<OrderProvider>();
+    final cartItem = await ItemOptionsScreen.open(context, item);
+    if (cartItem != null) order.addToCart(cartItem);
+  }
+
+  void _quickAdd(MenuItem item) {
+    if (!item.isAvailable) return _notAvailable(item);
+    if (item.modifierGroups.any((g) => g.minSelect > 0)) {
+      _openOptions(item);
       return;
     }
     final order = context.read<OrderProvider>();
-    final wasEmpty = order.cart.isEmpty;
-
-    final cartItem = await showItemOptionsSheet(context, item);
-    if (cartItem == null || !mounted) return;
-    order.addToCart(cartItem);
-
-    // Pehla item add hua -> table/customer details lo
-    if (wasEmpty) {
-      if (order.isDineIn && !order.hasTableDetails) {
-        await showTableSelectSheet(context);
-      } else if (!order.isDineIn) {
-        await showCustomerSheet(context);
-      }
+    final i = order.cart.indexWhere(
+            (c) => c.item.id == item.id && c.modifiers.isEmpty && c.note.isEmpty);
+    if (i == -1) {
+      order.addToCart(CartItem(item: item, modifiers: []));
     } else {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('${cartItem.quantity} x ${item.name} added'),
-        duration: const Duration(seconds: 1),
-      ));
+      order.changeQty(i, 1);
     }
   }
 
@@ -87,12 +87,8 @@ class _MenuScreenState extends State<MenuScreen> {
         title: const Text('Order discard karna hai?'),
         content: const Text('Cart mein items hain, woh delete ho jayenge.'),
         actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Nahi')),
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Haan, discard')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Nahi')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Haan, discard')),
         ],
       ),
     );
@@ -102,6 +98,11 @@ class _MenuScreenState extends State<MenuScreen> {
   @override
   Widget build(BuildContext context) {
     final order = context.watch<OrderProvider>();
+    final items = _visibleItems;
+    final subtitle = order.isDineIn
+        ? '${order.hall?.name ?? ''} · T${order.table?.tableNumber ?? '-'} · ${order.server?.name ?? ''}'
+        : (order.customerName.isEmpty ? 'Takeaway' : 'Takeaway · ${order.customerName}');
+    const small = TextStyle(fontSize: 10, color: AppColors.textSecondary);
 
     return PopScope(
       canPop: order.cart.isEmpty,
@@ -114,119 +115,108 @@ class _MenuScreenState extends State<MenuScreen> {
         }
       },
       child: Scaffold(
-        appBar: AppBar(
-          title: Text(order.isDineIn ? 'Dine-in' : 'Takeaway'),
-          bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(56),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-              child: TextField(
-                decoration: const InputDecoration(
-                  hintText: 'Item search karo',
-                  prefixIcon: Icon(Icons.search),
-                  isDense: true,
-                ),
-                onChanged: (v) => setState(() => _search = v.trim()),
+        body: SafeArea(
+          child: Column(
+            children: [
+              ScreenHeader(
+                title: 'Take an order',
+                subtitle: subtitle,
+                trailing: order.isDineIn
+                    ? IconButton(
+                  tooltip: 'Table badlo',
+                  icon: const Icon(Icons.table_restaurant_outlined),
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const ChooseTableScreen(changeOnly: true),
+                    ),
+                  ),
+                )
+                    : null,
               ),
-            ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.card,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: TextField(
+                    onChanged: (v) => setState(() => _search = v.trim()),
+                    decoration: const InputDecoration(
+                      hintText: 'Search menu',
+                      hintStyle: TextStyle(fontSize: 13),
+                      prefixIcon: Icon(Icons.search, size: 20),
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(vertical: 14),
+                    ),
+                  ),
+                ),
+              ),
+              if (_search.isEmpty && _categories.isNotEmpty)
+                PillScroller(
+                  options: [for (final c in _categories) c.name],
+                  selectedIndex: _categoryIndex,
+                  onChanged: (i) => setState(() => _categoryIndex = i),
+                ),
+              Expanded(
+                child: _loading
+                    ? const Center(child: CircularProgressIndicator())
+                    : ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          _search.isNotEmpty
+                              ? 'SEARCH RESULTS'
+                              : _categories.isEmpty
+                              ? 'MENU'
+                              : _categories[_categoryIndex].name.toUpperCase(),
+                          style: small,
+                        ),
+                        const Spacer(),
+                        Text('${items.length} items', style: small),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    if (items.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.all(24),
+                        child: Center(child: Text('Koi item nahi mila')),
+                      ),
+                    for (final item in items)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: _MenuItemCard(
+                          item: item,
+                          qtyInCart: order.cart
+                              .where((c) => c.item.id == item.id)
+                              .fold(0, (s, c) => s + c.quantity),
+                          onTap: () => _openOptions(item),
+                          onAdd: () => _quickAdd(item),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: PrimaryButton(
+                  label: order.cart.isEmpty
+                      ? 'Items add karo'
+                      : 'View order · ${order.itemCount} items · ${rs(order.subtotal)}',
+                  onPressed: order.cart.isEmpty
+                      ? null
+                      : () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(builder: (_) => const OrderSummaryScreen()),
+                  ),
+                ),
+              ),
+            ],
           ),
-          actions: [
-            if (order.cart.isNotEmpty) _OrderInfoChip(order: order),
-          ],
         ),
-        body: _loading
-            ? const Center(child: CircularProgressIndicator())
-            : Column(
-                children: [
-                  if (_search.isEmpty)
-                    SizedBox(
-                      height: 56,
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
-                        children: _categories
-                            .map((c) => Padding(
-                                  padding: const EdgeInsets.only(right: 8),
-                                  child: ChoiceChip(
-                                    label: Text(c.name),
-                                    selected: c.id == _selectedCategoryId,
-                                    onSelected: (_) => setState(
-                                        () => _selectedCategoryId = c.id),
-                                  ),
-                                ))
-                            .toList(),
-                      ),
-                    ),
-                  Expanded(
-                    child: GridView.builder(
-                      padding: const EdgeInsets.all(12),
-                      gridDelegate:
-                          const SliverGridDelegateWithMaxCrossAxisExtent(
-                        maxCrossAxisExtent: 220,
-                        mainAxisSpacing: 10,
-                        crossAxisSpacing: 10,
-                        childAspectRatio: 1.25,
-                      ),
-                      itemCount: _visibleItems.length,
-                      itemBuilder: (_, i) => _MenuItemCard(
-                        item: _visibleItems[i],
-                        qtyInCart: order.cart
-                            .where((c) => c.item.id == _visibleItems[i].id)
-                            .fold(0, (s, c) => s + c.quantity),
-                        onTap: () => _onItemTap(_visibleItems[i]),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-        bottomNavigationBar: order.cart.isEmpty
-            ? null
-            : SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(52),
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                    ),
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                          builder: (_) => const OrderSummaryScreen()),
-                    ),
-                    child: Text(
-                        'View Order (${order.itemCount})   ${rs(order.subtotal)}'),
-                  ),
-                ),
-              ),
-      ),
-    );
-  }
-}
-
-class _OrderInfoChip extends StatelessWidget {
-  final OrderProvider order;
-
-  const _OrderInfoChip({required this.order});
-
-  @override
-  Widget build(BuildContext context) {
-    final label = order.isDineIn
-        ? (order.table == null
-            ? 'Table select karo'
-            : '${order.hall!.name} T${order.table!.tableNumber} · ${order.server!.name}')
-        : (order.customerName.isEmpty ? 'Customer' : order.customerName);
-
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: ActionChip(
-        avatar: Icon(order.isDineIn ? Icons.table_restaurant : Icons.person,
-            size: 18),
-        label: Text(label),
-        onPressed: () => order.isDineIn
-            ? showTableSelectSheet(context)
-            : showCustomerSheet(context),
       ),
     );
   }
@@ -236,66 +226,87 @@ class _MenuItemCard extends StatelessWidget {
   final MenuItem item;
   final int qtyInCart;
   final VoidCallback onTap;
+  final VoidCallback onAdd;
 
   const _MenuItemCard({
     required this.item,
     required this.qtyInCart,
     required this.onTap,
+    required this.onAdd,
   });
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final t = Theme.of(context).textTheme;
+    final details = !item.isAvailable
+        ? 'Not available'
+        : item.hasOptions
+        ? item.modifierGroups.map((g) => g.name).join(' · ')
+        : 'Tap for comment & qty';
 
     return Opacity(
       opacity: item.isAvailable ? 1 : 0.45,
-      child: Card(
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: Stack(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(item.name,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: t.titleSmall),
-                    const Spacer(),
-                    Row(
-                      children: [
-                        Text(rs(item.price),
-                            style: t.titleMedium?.copyWith(
-                                color: cs.primary,
-                                fontWeight: FontWeight.bold)),
-                        const Spacer(),
-                        if (item.hasOptions)
-                          Icon(Icons.tune, size: 18, color: cs.outline),
-                      ],
-                    ),
-                    if (!item.isAvailable)
-                      Text('Not available',
-                          style: t.bodySmall?.copyWith(color: cs.error)),
-                  ],
+      child: InfoCard(
+        onTap: onTap,
+        padding: const EdgeInsets.fromLTRB(12, 12, 4, 12),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppColors.peach,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                item.name[0],
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
                 ),
               ),
-              if (qtyInCart > 0)
-                Positioned(
-                  top: 6,
-                  right: 6,
-                  child: CircleAvatar(
-                    radius: 12,
-                    backgroundColor: cs.primary,
-                    child: Text('$qtyInCart',
-                        style: TextStyle(color: cs.onPrimary, fontSize: 12)),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                   ),
-                ),
-            ],
-          ),
+                  Text(
+                    details,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: item.isAvailable
+                          ? AppColors.textSecondary
+                          : Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                  Text(
+                    rs(item.price),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (qtyInCart > 0)
+              Text('×$qtyInCart',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+            IconButton(
+              tooltip: 'Add',
+              onPressed: onAdd,
+              icon: const Icon(Icons.add, color: AppColors.primary),
+            ),
+          ],
         ),
       ),
     );
