@@ -20,6 +20,9 @@ npm i express mysql2 bcryptjs jsonwebtoken cors dotenv node-thermal-printer
 | GET | `/api/halls`, `/api/halls/:id/tables` | `getHalls`, `getTables` | All |
 | GET | `/api/staff/servers` | `getServers` | All |
 | POST | `/api/orders` | `placeOrder` | Server, Admin |
+| GET | `/api/orders` (`?active=1` = sirf payment baqi wale) | `getOrders` | All |
+| PUT | `/api/orders/:id/kitchen-status` (body: `status`) | `updateKitchenStatus` | Kitchen, Admin |
+| POST | `/api/orders/:id/pay` (body: `payment_method_id`, `discount`, `amount_received`, `reference`) | `payOrder` | Server, Admin |
 | GET | `/api/settings`, `/api/payment-methods` | `getSettings`, `getPaymentMethods` | All |
 | POST / PUT / DELETE | `/api/categories[/:id]` | `saveCategory`, `deleteCategory` | Admin |
 | POST / PUT / DELETE | `/api/menu[/:id]` | `saveMenuItem`, `deleteMenuItem` | Admin |
@@ -40,5 +43,8 @@ Admin = `role IN ('manager','owner')` (JWT middleware se check).
 - Modifier group save: purane options `UPDATE`, naye (`id = 0`) `INSERT`, hataye gaye options agar orders mein use hue to `is_available = 0`, warna `DELETE`
 - Staff: delete nahi, `is_active = 0`. PIN hamesha `bcrypt` hash. Aakhri active manager/owner inactive nahi ho sakta
 - Payment method: kam az kam 1 active
-- Bill: `lib/core/bill_calculator.dart` wala formula hi use karo, aur `tax_percent` order mein snapshot karo
+- Order: dine-in table `free` na ho to `400` "Table N already occupied hai"
+- Kitchen status: `order_items.kitchen_status` update karo (`pending` -> `preparing` -> `ready` -> `served`). Band (paid) order pe `400`
+- Payment: order pehle se paid ho to `400`. `amount_received` total se kam ho to `400`. Paid hone pe `orders.status = 'paid'`, `closed_at = NOW()` aur table free
+- Bill: `lib/core/bill_calculator.dart` wala formula hi use karo, aur `tax_percent`, `service_charge`, `tax`, `total` order mein snapshot karo
 - Saare errors: `res.status(400).json({ error: 'Roman Urdu message' })`, app wohi message dikhati hai
