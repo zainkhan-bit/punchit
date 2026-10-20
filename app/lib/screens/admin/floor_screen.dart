@@ -6,7 +6,6 @@ import '../../data/pos_repository.dart';
 import '../../models/models.dart';
 import '../../widgets/admin_widgets.dart';
 
-/// Halls aur unki tables
 class FloorScreen extends StatefulWidget {
   const FloorScreen({super.key});
 
