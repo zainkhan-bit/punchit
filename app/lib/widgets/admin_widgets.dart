@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-// Manager panel ki saari screens ke common helpers.
-
 String errorText(Object e) => e.toString().replaceFirst('Exception: ', '');
 
 void showMessage(BuildContext context, String msg, {bool error = false}) {
@@ -36,7 +34,6 @@ Future<bool> confirmDelete(BuildContext context, String what) async {
   return ok ?? false;
 }
 
-/// Edit / Delete wala 3-dot menu
 class EditDeleteMenu extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onDelete;
@@ -92,7 +89,6 @@ class EmptyHint extends StatelessWidget {
   }
 }
 
-/// Dialog / form ke andar "Save" button jo saving ke waqt spinner dikhaye
 class SaveButton extends StatelessWidget {
   final bool saving;
   final VoidCallback onPressed;
@@ -119,7 +115,6 @@ class SaveButton extends StatelessWidget {
   }
 }
 
-/// Dialog / form ke andar error message (backend ka "pehle se hai" waghera)
 class FormError extends StatelessWidget {
   final String? message;
 
@@ -141,8 +136,6 @@ class FormError extends StatelessWidget {
     );
   }
 }
-
-// ---------------- Validators ----------------
 
 class V {
   static String? req(String? v) =>
