@@ -5,7 +5,6 @@ import '../../data/pos_repository.dart';
 import '../../models/models.dart';
 import '../../widgets/admin_widgets.dart';
 
-/// Product add / edit. Save hone pe pop(true).
 class ProductFormScreen extends StatefulWidget {
   final MenuItem? existing;
   final int? defaultCategoryId;
@@ -26,7 +25,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   List<ModifierGroup> _groups = [];
 
   int? _categoryId;
-  int _stationId = 0; // 0 = category wala station
+  int _stationId = 0;
   bool _available = true;
   final Set<int> _groupIds = {};
 
@@ -156,7 +155,6 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<int>(
-                    // category badalne pe label update ho
                     key: ValueKey('station-$_categoryId'),
                     initialValue: _stationId,
                     isExpanded: true,
