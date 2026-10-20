@@ -5,9 +5,8 @@ import '../../data/pos_repository.dart';
 import '../../models/models.dart';
 import '../../providers/order_provider.dart';
 import '../../widgets/admin_widgets.dart';
+import '../../widgets/ui_kit.dart';
 
-/// Staff add / edit, role, PIN reset, active/inactive.
-/// Staff delete nahi hota (purane orders mein naam chahiye), sirf inactive.
 class StaffScreen extends StatefulWidget {
   const StaffScreen({super.key});
 
@@ -17,7 +16,16 @@ class StaffScreen extends StatefulWidget {
 
 class _StaffScreenState extends State<StaffScreen> {
   List<Staff> _staff = [];
+  int _tab = 0;
+  String? _banner;
   bool _loading = true;
+
+  static const _permissions = {
+    StaffRoles.server: 'Orders, tables aur payment lena',
+    StaffRoles.kitchen: 'Kitchen queue aur ready status',
+    StaffRoles.manager: 'Menu, staff, settings aur reports',
+    StaffRoles.owner: 'Manager wale sab kaam',
+  };
 
   @override
   void initState() {
@@ -28,7 +36,6 @@ class _StaffScreenState extends State<StaffScreen> {
   Future<void> _load() async {
     final list = await context.read<PosRepository>().getAllStaff();
     if (!mounted) return;
-    // Active pehle, phir role, phir naam
     list.sort((a, b) {
       if (a.isActive != b.isActive) return a.isActive ? -1 : 1;
       final r = StaffRoles.all
@@ -47,55 +54,90 @@ class _StaffScreenState extends State<StaffScreen> {
       context: context,
       builder: (_) => _StaffDialog(existing: existing),
     );
-    if (saved == true) _load();
+    if (saved == true) {
+      setState(() => _banner = existing == null
+          ? 'Naya staff account ready hai.'
+          : '${existing.name} ka record update ho gaya.');
+      _load();
+    }
   }
-
-  IconData _roleIcon(String role) => switch (role) {
-        StaffRoles.kitchen => Icons.soup_kitchen,
-        StaffRoles.manager => Icons.manage_accounts,
-        StaffRoles.owner => Icons.workspace_premium,
-        _ => Icons.room_service,
-      };
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final active = _staff.where((s) => s.isActive).length;
+    final roles = _staff.map((s) => s.role).toSet().length;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Staff')),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _openForm(),
-        icon: const Icon(Icons.person_add),
-        label: const Text('Staff'),
-      ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : ListView.separated(
-              padding: const EdgeInsets.only(bottom: 88),
-              itemCount: _staff.length,
-              separatorBuilder: (_, _) => const Divider(height: 1),
-              itemBuilder: (_, i) {
-                final s = _staff[i];
-                return ListTile(
-                  onTap: () => _openForm(s),
-                  leading: CircleAvatar(
-                    backgroundColor:
-                        s.isActive ? cs.primaryContainer : cs.surfaceContainerHighest,
-                    child: Icon(_roleIcon(s.role),
-                        color: s.isActive ? cs.onPrimaryContainer : cs.outline),
-                  ),
-                  title: Text(
-                    s.name,
-                    style: TextStyle(color: s.isActive ? null : cs.outline),
-                  ),
-                  subtitle: Text(
-                      '${s.employeeCode}  ·  ${StaffRoles.label(s.role)}'
-                      '${s.isActive ? '' : '  ·  Inactive'}'),
-                  trailing: const Icon(Icons.edit),
-                );
-              },
+      body: SafeArea(
+        child: Column(
+          children: [
+            ScreenHeader(
+              title: 'Staff & access',
+              subtitle: '$active team members · $roles roles',
             ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                children: [
+                  if (_banner != null) ...[
+                    NoteBanner(text: _banner!, type: NoteType.success),
+                    const SizedBox(height: 10),
+                  ],
+                  PillTabs(
+                    options: const ['Team members', 'Permissions'],
+                    selectedIndex: _tab,
+                    onChanged: (i) => setState(() => _tab = i),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : ListView(
+                      padding: const EdgeInsets.all(16),
+                      children: _tab == 0 ? _membersList() : _permissionsList(),
+                    ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: PrimaryButton(label: 'Add staff member', onPressed: () => _openForm()),
+            ),
+          ],
+        ),
+      ),
     );
   }
+
+  List<Widget> _membersList() => [
+        for (final s in _staff)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: ListRowCard(
+              title: s.name,
+              subtitle: 'ID ${s.employeeCode} · ${StaffRoles.label(s.role)} · '
+                  '${s.isActive ? 'Active' : 'Inactive'}',
+              onTap: () => _openForm(s),
+            ),
+          ),
+      ];
+
+  List<Widget> _permissionsList() => [
+        for (final role in StaffRoles.all)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: ListRowCard(
+              title: '${StaffRoles.label(role)} · '
+                  '${_staff.where((s) => s.role == role && s.isActive).length} active',
+              subtitle: _permissions[role],
+              trailing: const SizedBox.shrink(),
+            ),
+          ),
+        const NoteBanner(
+          text: 'Sirf Manager ya Owner staff bana ya badal sakta hai.',
+          type: NoteType.warning,
+        ),
+      ];
 }
 
 class _StaffDialog extends StatefulWidget {
@@ -156,7 +198,6 @@ class _StaffDialogState extends State<_StaffDialog> {
             newPin: pin.isEmpty ? null : pin,
           );
       if (!mounted) return;
-      // Apni hi profile edit ki ho to logged-in info update karo
       final order = context.read<OrderProvider>();
       if (order.loggedInStaff?.id == saved.id) order.login(saved);
       Navigator.pop(context, true);
@@ -209,7 +250,6 @@ class _StaffDialogState extends State<_StaffDialog> {
                       .map((r) => DropdownMenuItem(
                           value: r, child: Text(StaffRoles.label(r))))
                       .toList(),
-                  // Apna role khud nahi badal sakte (lock-out se bachne ke liye)
                   onChanged:
                       isMe ? null : (v) => setState(() => _role = v ?? _role),
                 ),
