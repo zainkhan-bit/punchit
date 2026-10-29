@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../models/models.dart';
 import '../providers/order_provider.dart';
+import '../widgets/sign_out_dialog.dart';
 import 'choose_table_screen.dart';
 import 'login_screen.dart';
 import 'menu_screen.dart';
@@ -18,11 +19,12 @@ void startNewOrder(NavigatorState nav, OrderProvider order, OrderType type) {
   ));
 }
 
-void openServerTab(BuildContext context, int index) {
+Future<void> openServerTab(BuildContext context, int index) async {
   final nav = Navigator.of(context);
   final order = context.read<OrderProvider>();
 
   if (index == 3) {
+    if (!await confirmSignOut(context)) return;
     order.logout();
     nav.pushAndRemoveUntil(
       MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
