@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -22,17 +24,27 @@ class _KitchenQueueScreenState extends State<KitchenQueueScreen> {
   String? _banner;
   int? _busyId;
   bool _loading = true;
+  Timer? _timer;
+  DateTime? _lastUpdated;
 
   @override
   void initState() {
     super.initState();
     _load();
+    _timer = Timer.periodic(const Duration(seconds: 15), (_) => _load());
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 
   Future<void> _load() async {
     final orders = await context.read<PosRepository>().getOrders(activeOnly: true);
     if (!mounted) return;
     setState(() {
+      _lastUpdated = DateTime.now();
       _orders = orders.where((o) => o.status == OrderStatus.open).toList()
         ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
       _loading = false;
@@ -102,7 +114,8 @@ class _KitchenQueueScreenState extends State<KitchenQueueScreen> {
           children: [
             ScreenHeader(
               title: _tab == 0 ? 'Kitchen queue' : 'Ready for pickup',
-              subtitle: 'Kitchen · ${staff?.name ?? ''}',
+              subtitle: 'Kitchen · ${staff?.name ?? ''}'
+                  '${_lastUpdated == null ? '' : ' · Updated ${timeLabel(_lastUpdated!)}'}',
               showBack: false,
               trailing: IconButton(
                 tooltip: 'Refresh',
