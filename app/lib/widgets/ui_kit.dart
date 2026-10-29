@@ -441,6 +441,7 @@ class LabeledField extends StatelessWidget {
   final int? maxLength;
   final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onSubmitted;
+  final Widget? suffix;
 
   const LabeledField({
     super.key,
@@ -454,6 +455,7 @@ class LabeledField extends StatelessWidget {
     this.maxLength,
     this.onChanged,
     this.onSubmitted,
+    this.suffix,
   });
 
   @override
@@ -493,6 +495,8 @@ class LabeledField extends StatelessWidget {
               isDense: true,
               counterText: '',
               contentPadding: const EdgeInsets.symmetric(vertical: 6),
+              suffixIcon: suffix,
+              suffixIconConstraints: const BoxConstraints(minWidth: 32, minHeight: 32),
             ),
           ),
         ],
