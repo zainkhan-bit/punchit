@@ -22,12 +22,24 @@ class _MenuScreenState extends State<MenuScreen> {
   List<MenuItem> _items = [];
   int _categoryIndex = 0;
   String _search = '';
+  final _searchCtrl = TextEditingController();
   bool _loading = true;
 
   @override
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  void _clearSearch() {
+    _searchCtrl.clear();
+    setState(() => _search = '');
   }
 
   Future<void> _load() async {
@@ -141,15 +153,23 @@ class _MenuScreenState extends State<MenuScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: TextField(
+                    controller: _searchCtrl,
                     onChanged: (v) => setState(() => _search = v.trim()),
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       hintText: 'Search menu',
-                      hintStyle: TextStyle(fontSize: 13),
-                      prefixIcon: Icon(Icons.search, size: 20),
+                      hintStyle: const TextStyle(fontSize: 13),
+                      prefixIcon: const Icon(Icons.search, size: 20),
+                      suffixIcon: _search.isEmpty
+                          ? null
+                          : IconButton(
+                              tooltip: 'Search clear karo',
+                              icon: const Icon(Icons.close, size: 18),
+                              onPressed: _clearSearch,
+                            ),
                       border: InputBorder.none,
                       enabledBorder: InputBorder.none,
                       focusedBorder: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(vertical: 14),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                   ),
                 ),
