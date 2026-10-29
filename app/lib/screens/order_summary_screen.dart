@@ -50,6 +50,22 @@ class _OrderSummaryScreenState extends State<OrderSummaryScreen> {
     if (updated != null) order.updateCartItem(index, updated);
   }
 
+  Future<void> _clearCart() async {
+    final order = context.read<OrderProvider>();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Saare items hata dein?'),
+        content: const Text('Cart khali ho jayega. Table aur customer wahi rahenge.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Nahi')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Haan, clear')),
+        ],
+      ),
+    );
+    if (ok == true) order.clearCart();
+  }
+
   Future<void> _sendToKitchen() async {
     final order = context.read<OrderProvider>();
     final repo = context.read<PosRepository>();
@@ -128,7 +144,16 @@ class _OrderSummaryScreenState extends State<OrderSummaryScreen> {
                     const SizedBox(height: 16),
                   ],
                   if (order.cart.isEmpty)
-                    const NoteBanner(text: 'Cart khali hai. Wapas ja kar items add karo.'),
+                    const NoteBanner(text: 'Cart khali hai. Wapas ja kar items add karo.')
+                  else
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                        onPressed: _sending ? null : _clearCart,
+                        icon: const Icon(Icons.delete_sweep_outlined, size: 18),
+                        label: const Text('Clear cart'),
+                      ),
+                    ),
                   for (var i = 0; i < order.cart.length; i++)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 10),
