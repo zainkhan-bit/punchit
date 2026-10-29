@@ -5,6 +5,7 @@ import '../../core/app_theme.dart';
 import '../../data/pos_repository.dart';
 import '../../models/models.dart';
 import '../../providers/order_provider.dart';
+import '../../widgets/sign_out_dialog.dart';
 import '../../widgets/ui_kit.dart';
 import '../login_screen.dart';
 
@@ -68,8 +69,9 @@ class _KitchenQueueScreenState extends State<KitchenQueueScreen> {
     _load();
   }
 
-  void _onNav(int i) {
+  Future<void> _onNav(int i) async {
     if (i == 2) {
+      if (!await confirmSignOut(context) || !mounted) return;
       context.read<OrderProvider>().logout();
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
