@@ -5,6 +5,7 @@ import '../../core/app_theme.dart';
 import '../../data/pos_repository.dart';
 import '../../models/models.dart';
 import '../../providers/order_provider.dart';
+import '../../widgets/sign_out_dialog.dart';
 import '../../widgets/ui_kit.dart';
 import '../login_screen.dart';
 import '../order_type_screen.dart';
@@ -67,7 +68,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     _load();
   }
 
-  void _logout() {
+  Future<void> _logout() async {
+    if (!await confirmSignOut(context) || !mounted) return;
     context.read<OrderProvider>().logout();
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
