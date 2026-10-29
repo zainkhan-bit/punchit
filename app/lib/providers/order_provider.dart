@@ -80,6 +80,11 @@ class OrderProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void clearCart() {
+    cart.clear();
+    notifyListeners();
+  }
+
   void resetOrder({bool notify = true}) {
     orderType = null;
     hall = null;
