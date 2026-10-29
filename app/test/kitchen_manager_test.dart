@@ -39,6 +39,8 @@ void main() {
     await tapText(t, 'Handed over');
     expect(find.text('#999 / Takeaway · Usman'), findsNothing);
     await tapText(t, 'Sign out');
+    expect(find.text('Sign out karna hai?'), findsOneWidget);
+    await tapText(t, 'Haan, sign out');
     expect(find.text('Sign in'), findsOneWidget);
   });
 
