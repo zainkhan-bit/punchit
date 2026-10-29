@@ -23,6 +23,7 @@ class _CollectPaymentScreenState extends State<CollectPaymentScreen> {
   int _methodIndex = 0;
   final _cashCtrl = TextEditingController();
   final _refCtrl = TextEditingController();
+  final _discountCtrl = TextEditingController();
   bool _paying = false;
   String? _error;
 
@@ -34,10 +35,16 @@ class _CollectPaymentScreenState extends State<CollectPaymentScreen> {
       ? null
       : BillCalculator.calculate(
     subtotal: _order.subtotal,
+    discount: _discount,
     method: _method!,
     settings: _settings!,
     isDineIn: _order.isDineIn,
   );
+
+  double get _discount =>
+      double.tryParse(_discountCtrl.text.replaceAll(',', '').trim()) ?? 0;
+
+  bool get _discountTooBig => _discount > _order.subtotal;
 
   double get _cashReceived => double.tryParse(_cashCtrl.text.replaceAll(',', '').trim()) ?? 0;
 
@@ -51,6 +58,7 @@ class _CollectPaymentScreenState extends State<CollectPaymentScreen> {
   void dispose() {
     _cashCtrl.dispose();
     _refCtrl.dispose();
+    _discountCtrl.dispose();
     super.dispose();
   }
 
@@ -78,7 +86,7 @@ class _CollectPaymentScreenState extends State<CollectPaymentScreen> {
 
   bool get _canPay {
     final bill = _bill;
-    if (bill == null) return false;
+    if (bill == null || _discount < 0 || _discountTooBig) return false;
     return _isCash ? _cashReceived >= bill.total : _refCtrl.text.trim().isNotEmpty;
   }
 
@@ -91,6 +99,7 @@ class _CollectPaymentScreenState extends State<CollectPaymentScreen> {
       final paid = await context.read<PosRepository>().payOrder(
         orderId: _order.id,
         method: _method!,
+        discount: _discount,
         amountReceived: _isCash ? _cashReceived : _bill!.total,
         reference: _isCash ? '' : _refCtrl.text.trim(),
       );
@@ -153,6 +162,7 @@ class _CollectPaymentScreenState extends State<CollectPaymentScreen> {
                   ),
                   const SizedBox(height: 14),
                   AmountRow('Subtotal', rs(bill.subtotal)),
+                  if (bill.discount > 0) AmountRow('Discount', '- ${rs(bill.discount)}'),
                   if (bill.serviceCharge > 0)
                     AmountRow(
                       'Service charge · ${_pct(_settings!.serviceChargePercent)}%',
@@ -161,6 +171,21 @@ class _CollectPaymentScreenState extends State<CollectPaymentScreen> {
                   AmountRow('Tax · ${_pct(bill.taxPercent)}% (${_method!.name})', rs(bill.tax)),
                   const Divider(color: AppColors.divider, height: 20),
                   AmountRow('Total', rs(bill.total), bold: true),
+                  const SizedBox(height: 12),
+                  LabeledField(
+                    label: 'Discount (Rs)',
+                    controller: _discountCtrl,
+                    hint: '0',
+                    keyboardType: TextInputType.number,
+                    onChanged: (_) => setState(() {}),
+                  ),
+                  if (_discountTooBig) ...[
+                    const SizedBox(height: 8),
+                    const NoteBanner(
+                      text: 'Discount subtotal se zyada nahi ho sakta',
+                      type: NoteType.error,
+                    ),
+                  ],
                   const SizedBox(height: 16),
                   const Text(
                     'Payment method',
