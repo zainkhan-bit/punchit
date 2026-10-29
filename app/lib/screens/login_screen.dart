@@ -21,6 +21,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _codeCtrl = TextEditingController();
   final _pinCtrl = TextEditingController();
   bool _loading = false;
+  bool _showPin = false;
   String? _error;
 
   @override
@@ -118,8 +119,17 @@ class _LoginScreenState extends State<LoginScreen> {
                     controller: _pinCtrl,
                     hint: '••••',
                     keyboardType: TextInputType.number,
-                    obscureText: true,
+                    obscureText: !_showPin,
                     maxLength: 4,
+                    suffix: IconButton(
+                      tooltip: _showPin ? 'PIN chhupao' : 'PIN dikhao',
+                      icon: Icon(
+                        _showPin ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                        size: 20,
+                        color: AppColors.textSecondary,
+                      ),
+                      onPressed: () => setState(() => _showPin = !_showPin),
+                    ),
                     onSubmitted: (_) => _login(),
                   ),
                   const SizedBox(height: 12),
