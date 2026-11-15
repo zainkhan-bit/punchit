@@ -7,6 +7,7 @@ import '../../core/app_theme.dart';
 import '../../data/pos_repository.dart';
 import '../../models/models.dart';
 import '../../providers/order_provider.dart';
+import '../../widgets/motion.dart';
 import '../../widgets/sign_out_dialog.dart';
 import '../../widgets/ui_kit.dart';
 import '../login_screen.dart';
@@ -129,9 +130,21 @@ class _KitchenQueueScreenState extends State<KitchenQueueScreen> {
                 children: [
                   Row(
                     children: [
-                      Expanded(child: StatTile(label: 'In progress', value: '${_inProgress.length}')),
+                      Expanded(
+                        child: StatTile(
+                          label: 'In progress',
+                          value: '-',
+                          count: _loading ? null : _inProgress.length,
+                        ),
+                      ),
                       const SizedBox(width: 12),
-                      Expanded(child: StatTile(label: 'Ready', value: '${_ready.length}')),
+                      Expanded(
+                        child: StatTile(
+                          label: 'Ready',
+                          value: '-',
+                          count: _loading ? null : _ready.length,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -149,7 +162,13 @@ class _KitchenQueueScreenState extends State<KitchenQueueScreen> {
             ),
             Expanded(
               child: _loading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? const Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Align(
+                        alignment: Alignment.topCenter,
+                        child: SkeletonList(count: 2, itemHeight: 190, spacing: 12),
+                      ),
+                    )
                   : RefreshIndicator(
                       onRefresh: _load,
                       child: ListView(
@@ -163,16 +182,19 @@ class _KitchenQueueScreenState extends State<KitchenQueueScreen> {
                           for (final o in shown)
                             Padding(
                               padding: const EdgeInsets.only(bottom: 12),
-                              child: _TicketCard(
-                                order: o,
-                                busy: _busyId == o.id,
-                                onAction: () => _setStatus(
-                                  o,
-                                  switch (o.kitchenStatus) {
-                                    KitchenStatus.pending => KitchenStatus.preparing,
-                                    KitchenStatus.preparing => KitchenStatus.ready,
-                                    _ => KitchenStatus.served,
-                                  },
+                              child: FadeSlideIn(
+                                key: ValueKey('$_tab-${o.id}'),
+                                child: _TicketCard(
+                                  order: o,
+                                  busy: _busyId == o.id,
+                                  onAction: () => _setStatus(
+                                    o,
+                                    switch (o.kitchenStatus) {
+                                      KitchenStatus.pending => KitchenStatus.preparing,
+                                      KitchenStatus.preparing => KitchenStatus.ready,
+                                      _ => KitchenStatus.served,
+                                    },
+                                  ),
                                 ),
                               ),
                             ),
