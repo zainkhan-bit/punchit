@@ -84,6 +84,21 @@ class _CollectPaymentScreenState extends State<CollectPaymentScreen> {
     });
   }
 
+  void _applyDiscountPercent(double percent) {
+    final discountVal = (_order.subtotal * (percent / 100)).roundToDouble();
+    setState(() {
+      _discountCtrl.text = percent == 0 ? '' : discountVal.toStringAsFixed(0);
+      _onMethodChanged(_methodIndex);
+    });
+  }
+
+  void _applyFlatDiscount(double amount) {
+    setState(() {
+      _discountCtrl.text = amount.toStringAsFixed(0);
+      _onMethodChanged(_methodIndex);
+    });
+  }
+
   bool get _canPay {
     final bill = _bill;
     if (bill == null || _discount < 0 || _discountTooBig) return false;
@@ -179,6 +194,43 @@ class _CollectPaymentScreenState extends State<CollectPaymentScreen> {
                     keyboardType: TextInputType.number,
                     onChanged: (_) => setState(() {}),
                   ),
+                  const SizedBox(height: 8),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _DiscountChip(
+                          label: 'No Discount',
+                          selected: _discount == 0,
+                          onTap: () => _applyDiscountPercent(0),
+                        ),
+                        const SizedBox(width: 6),
+                        _DiscountChip(
+                          label: '5% OFF',
+                          selected: (_discount - (_order.subtotal * 0.05).roundToDouble()).abs() < 1 && _discount > 0,
+                          onTap: () => _applyDiscountPercent(5),
+                        ),
+                        const SizedBox(width: 6),
+                        _DiscountChip(
+                          label: '10% OFF',
+                          selected: (_discount - (_order.subtotal * 0.10).roundToDouble()).abs() < 1 && _discount > 0,
+                          onTap: () => _applyDiscountPercent(10),
+                        ),
+                        const SizedBox(width: 6),
+                        _DiscountChip(
+                          label: '15% OFF',
+                          selected: (_discount - (_order.subtotal * 0.15).roundToDouble()).abs() < 1 && _discount > 0,
+                          onTap: () => _applyDiscountPercent(15),
+                        ),
+                        const SizedBox(width: 6),
+                        _DiscountChip(
+                          label: 'Rs 100 OFF',
+                          selected: _discount == 100,
+                          onTap: () => _applyFlatDiscount(100),
+                        ),
+                      ],
+                    ),
+                  ),
                   if (_discountTooBig) ...[
                     const SizedBox(height: 8),
                     const NoteBanner(
@@ -260,6 +312,33 @@ class _CollectPaymentScreenState extends State<CollectPaymentScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _DiscountChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _DiscountChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return ChoiceChip(
+      label: Text(label, style: const TextStyle(fontSize: 11)),
+      selected: selected,
+      onSelected: (_) => onTap(),
+      selectedColor: cs.primary.withAlpha(35),
+      labelStyle: TextStyle(
+        color: selected ? cs.primary : AppColors.textSecondary,
+        fontWeight: selected ? FontWeight.bold : FontWeight.normal,
       ),
     );
   }
