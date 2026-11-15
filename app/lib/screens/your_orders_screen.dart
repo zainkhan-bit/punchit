@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../data/pos_repository.dart';
 import '../models/models.dart';
 import '../providers/order_provider.dart';
+import '../widgets/motion.dart';
 import '../widgets/order_card.dart';
 import '../widgets/ui_kit.dart';
 import 'collect_payment_screen.dart';
@@ -76,7 +77,13 @@ class _YourOrdersScreenState extends State<YourOrdersScreen> {
             ),
             Expanded(
               child: _loading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? const Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Align(
+                        alignment: Alignment.topCenter,
+                        child: SkeletonList(count: 3),
+                      ),
+                    )
                   : RefreshIndicator(
                 onRefresh: _load,
                 child: ListView(
@@ -87,12 +94,16 @@ class _YourOrdersScreenState extends State<YourOrdersScreen> {
                         text: _tab == 0 ? 'Koi active order nahi.' : 'Abhi koi paid order nahi.',
                         type: NoteType.success,
                       ),
-                    for (final o in shown)
+                    for (final (i, o) in shown.indexed)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 10),
-                        child: OrderCard(
-                          order: o,
-                          onTap: _tab == 0 ? () => _collect(o) : null,
+                        child: FadeSlideIn(
+                          key: ValueKey('$_tab-${o.id}'),
+                          index: i,
+                          child: OrderCard(
+                            order: o,
+                            onTap: _tab == 0 ? () => _collect(o) : null,
+                          ),
                         ),
                       ),
                     if (_tab == 0 && active.isNotEmpty)
