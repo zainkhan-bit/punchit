@@ -5,6 +5,7 @@ import '../../core/app_theme.dart';
 import '../../data/pos_repository.dart';
 import '../../models/models.dart';
 import '../../providers/order_provider.dart';
+import '../../widgets/motion.dart';
 import '../../widgets/sign_out_dialog.dart';
 import '../../widgets/ui_kit.dart';
 import '../login_screen.dart';
@@ -118,54 +119,83 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                 ],
               ),
               const SizedBox(height: 20),
-              HeroCard(
-                icon: Icons.bar_chart,
-                title: _loading ? '-' : rs(_sales),
-                subtitle: "Today's sales · $_paidCount completed orders",
+              FadeSlideIn(
+                child: HeroCard(
+                  icon: Icons.bar_chart,
+                  title: '-',
+                  titleWidget: _loading
+                      ? null
+                      : AnimatedCount(
+                          value: _sales,
+                          format: rs,
+                          style: HeroCard.titleStyle,
+                        ),
+                  subtitle: "Today's sales · $_paidCount completed orders",
+                ),
               ),
               const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: StatTile(
-                      label: 'Orders in progress',
-                      value: _loading ? '-' : '$_activeCount',
+              FadeSlideIn(
+                index: 1,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: StatTile(
+                        label: 'Orders in progress',
+                        value: '-',
+                        count: _loading ? null : _activeCount,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: StatTile(
-                      label: 'Staff on shift',
-                      value: _loading ? '-' : '$_staffOnShift',
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: StatTile(
+                        label: 'Staff on shift',
+                        value: '-',
+                        count: _loading ? null : _staffOnShift,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               const SizedBox(height: 12),
-              PrimaryButton(label: 'Take order', onPressed: _takeOrder),
+              FadeSlideIn(
+                index: 2,
+                child: PrimaryButton(label: 'Take order', onPressed: _takeOrder),
+              ),
               const SizedBox(height: 20),
-              ListRowCard(
-                title: 'Menu management',
-                subtitle: 'Products, prices aur availability',
-                onTap: () => _open(const ProductsScreen()),
+              FadeSlideIn(
+                index: 3,
+                child: ListRowCard(
+                  title: 'Menu management',
+                  subtitle: 'Products, prices aur availability',
+                  onTap: () => _open(const ProductsScreen()),
+                ),
               ),
               const SizedBox(height: 10),
-              ListRowCard(
-                title: 'Staff & access',
-                subtitle: 'Accounts, roles aur PIN',
-                onTap: () => _open(const StaffScreen()),
+              FadeSlideIn(
+                index: 4,
+                child: ListRowCard(
+                  title: 'Staff & access',
+                  subtitle: 'Accounts, roles aur PIN',
+                  onTap: () => _open(const StaffScreen()),
+                ),
               ),
               const SizedBox(height: 10),
-              ListRowCard(
-                title: 'Daily reports',
-                subtitle: 'Sales, payments aur order history',
-                onTap: () => _open(const DailyReportScreen()),
+              FadeSlideIn(
+                index: 5,
+                child: ListRowCard(
+                  title: 'Daily reports',
+                  subtitle: 'Sales, payments aur order history',
+                  onTap: () => _open(const DailyReportScreen()),
+                ),
               ),
               const SizedBox(height: 10),
-              ListRowCard(
-                title: 'Restaurant settings',
-                subtitle: 'Tables, stations, tax aur toppings',
-                onTap: () => _open(const RestaurantSettingsScreen()),
+              FadeSlideIn(
+                index: 6,
+                child: ListRowCard(
+                  title: 'Restaurant settings',
+                  subtitle: 'Tables, stations, tax aur toppings',
+                  onTap: () => _open(const RestaurantSettingsScreen()),
+                ),
               ),
             ],
           ),

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/app_theme.dart';
 import '../../data/pos_repository.dart';
 import '../../models/models.dart';
+import '../../widgets/motion.dart';
 import '../../widgets/ui_kit.dart';
 import 'manager_nav.dart';
 import 'order_history_screen.dart';
@@ -86,7 +87,13 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
             ),
             Expanded(
               child: _loading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      child: Align(
+                        alignment: Alignment.topCenter,
+                        child: SkeletonList(count: 2, itemHeight: 150, spacing: 12),
+                      ),
+                    )
                   : RefreshIndicator(
                       onRefresh: _load,
                       child: ListView(
@@ -94,10 +101,21 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
                         children: [
                           Row(
                             children: [
-                              Expanded(child: StatTile(label: 'Total sales', value: rs(_sales))),
+                              Expanded(
+                                child: StatTile(
+                                  label: 'Total sales',
+                                  value: rs(_sales),
+                                  count: _sales,
+                                  format: rs,
+                                ),
+                              ),
                               const SizedBox(width: 12),
                               Expanded(
-                                child: StatTile(label: 'Completed orders', value: '${_paid.length}'),
+                                child: StatTile(
+                                  label: 'Completed orders',
+                                  value: '${_paid.length}',
+                                  count: _paid.length,
+                                ),
                               ),
                             ],
                           ),
@@ -186,13 +204,29 @@ class _SalesChart extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    Container(
-                      height: 100 * ((salesByHour[h] ?? 0) / maxValue) + 4,
-                      decoration: BoxDecoration(
-                        color: (salesByHour[h] ?? 0) == maxValue
-                            ? AppColors.primary
-                            : AppColors.peach,
-                        borderRadius: BorderRadius.circular(6),
+                    TweenAnimationBuilder<double>(
+                      tween: Tween<double>(
+                        begin: 0,
+                        end: (salesByHour[h] ?? 0) / maxValue,
+                      ),
+                      duration: const Duration(milliseconds: 700),
+                      curve: Curves.easeOutCubic,
+                      builder: (_, ratio, __) => Container(
+                        height: 100 * ratio + 4,
+                        decoration: BoxDecoration(
+                          gradient: (salesByHour[h] ?? 0) == maxValue
+                              ? const LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [AppColors.primaryLight, AppColors.primary],
+                                )
+                              : null,
+                          color: (salesByHour[h] ?? 0) == maxValue ? null : AppColors.peach,
+                          borderRadius: BorderRadius.circular(6),
+                          boxShadow: (salesByHour[h] ?? 0) == maxValue
+                              ? AppShadows.button
+                              : null,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 6),

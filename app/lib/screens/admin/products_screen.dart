@@ -150,6 +150,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                       onChanged: (v) => setState(() => _search = v.trim()),
                       decoration: const InputDecoration(
                         hintText: 'Search products',
+                        filled: false,
                         hintStyle: TextStyle(fontSize: 13),
                         prefixIcon: Icon(Icons.search, size: 20),
                         border: InputBorder.none,
