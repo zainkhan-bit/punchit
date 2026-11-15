@@ -5,6 +5,8 @@ import '../core/app_theme.dart';
 import '../data/pos_repository.dart';
 import '../models/models.dart';
 import '../providers/order_provider.dart';
+import '../widgets/item_avatar.dart';
+import '../widgets/motion.dart';
 import '../widgets/ui_kit.dart';
 import 'choose_table_screen.dart';
 import 'item_options_screen.dart';
@@ -148,15 +150,17 @@ class _MenuScreenState extends State<MenuScreen> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                 child: Container(
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: AppColors.card,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.all(Radius.circular(12)),
+                    boxShadow: AppShadows.soft,
                   ),
                   child: TextField(
                     controller: _searchCtrl,
                     onChanged: (v) => setState(() => _search = v.trim()),
                     decoration: InputDecoration(
                       hintText: 'Search menu',
+                      filled: false,
                       hintStyle: const TextStyle(fontSize: 13),
                       prefixIcon: const Icon(Icons.search, size: 20),
                       suffixIcon: _search.isEmpty
@@ -182,7 +186,13 @@ class _MenuScreenState extends State<MenuScreen> {
                 ),
               Expanded(
                 child: _loading
-                    ? const Center(child: CircularProgressIndicator())
+                    ? const Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Align(
+                          alignment: Alignment.topCenter,
+                          child: SkeletonList(count: 4, itemHeight: 76),
+                        ),
+                      )
                     : ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
@@ -206,16 +216,20 @@ class _MenuScreenState extends State<MenuScreen> {
                         padding: EdgeInsets.all(24),
                         child: Center(child: Text('Koi item nahi mila')),
                       ),
-                    for (final item in items)
+                    for (final (i, item) in items.indexed)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 10),
-                        child: _MenuItemCard(
-                          item: item,
-                          qtyInCart: order.cart
-                              .where((c) => c.item.id == item.id)
-                              .fold(0, (s, c) => s + c.quantity),
-                          onTap: () => _openOptions(item),
-                          onAdd: () => _quickAdd(item),
+                        child: FadeSlideIn(
+                          key: ValueKey(item.id),
+                          index: i,
+                          child: _MenuItemCard(
+                            item: item,
+                            qtyInCart: order.cart
+                                .where((c) => c.item.id == item.id)
+                                .fold(0, (s, c) => s + c.quantity),
+                            onTap: () => _openOptions(item),
+                            onAdd: () => _quickAdd(item),
+                          ),
                         ),
                       ),
                   ],
@@ -270,23 +284,7 @@ class _MenuItemCard extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(12, 12, 4, 12),
         child: Row(
           children: [
-            Container(
-              width: 44,
-              height: 44,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: AppColors.peach,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                item.name[0],
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
-                ),
-              ),
-            ),
+            ItemAvatar(item: item, width: 44, height: 44),
             const SizedBox(width: 12),
             Expanded(
               child: Column(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/app_theme.dart';
 import '../models/models.dart';
+import '../widgets/item_avatar.dart';
 import '../widgets/ui_kit.dart';
 
 class ItemOptionsScreen extends StatefulWidget {
@@ -140,22 +141,7 @@ class _ItemOptionsScreenState extends State<ItemOptionsScreen> {
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 children: [
-                  Container(
-                    height: 120,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: AppColors.peach,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Text(
-                      _item.name[0],
-                      style: const TextStyle(
-                        fontSize: 56,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  ),
+                  ItemAvatar(item: _item, height: 120, radius: 16),
                   const SizedBox(height: 16),
                   Row(
                     children: [
