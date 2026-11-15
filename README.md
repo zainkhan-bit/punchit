@@ -136,3 +136,10 @@ Abhi data **mock** hai (memory mein). App band karne pe naye orders aur changes 
 - Station delete ho to us ki categories "sirf Cut Table" pe chali jati hain (DB mein `ON DELETE SET NULL`)
 - Cash payment total se kam ho to record nahi hoti; ek order ki payment do baar nahi hoti
 - Tax rate bill pe **snapshot** hota hai (`orders.tax_percent`), baad mein rate badle to purane bills same rahein
+
+---
+
+## Responsive Desktop & Mobile Support
+
+App includes a built-in `MobileFrameWrapper` inside `main.dart`. When running on desktop (Windows, macOS, Linux) or Web browsers, the UI is automatically centered and framed inside a sleek 450px mobile device container with dark elevation, while rendering natively full-screen on physical mobile phones.
+
