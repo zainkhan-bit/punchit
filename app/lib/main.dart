@@ -19,6 +19,7 @@ void main() {
   );
 }
 
+/// Root application widget configuring Theme, Navigation & Responsive Frame.
 class PunchItApp extends StatelessWidget {
   const PunchItApp({super.key});
 
@@ -28,6 +29,7 @@ class PunchItApp extends StatelessWidget {
       title: 'PunchIt',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
+      // Wrap desktop/web window in a mobile frame layout
       builder: (context, child) {
         final media = MediaQuery.of(context);
         if (media.size.width > 500) {
