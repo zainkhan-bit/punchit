@@ -1,10 +1,25 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 
 import '../core/bill_calculator.dart';
 import '../models/models.dart';
+import 'local_store.dart';
 import 'pos_repository.dart';
 
 class MockPosRepository implements PosRepository {
+  final LocalStore? _store;
+
+  MockPosRepository({LocalStore? store}) : _store = store {
+    final saved = store?.read();
+    if (saved != null) {
+      try {
+        _restore(jsonDecode(saved) as Map<String, dynamic>);
+      } catch (_) {
+        store?.clear();
+      }
+    }
+  }
   static const _delay = Duration(milliseconds: 250);
 
   int _nextId = 1000;
@@ -19,6 +34,146 @@ class MockPosRepository implements PosRepository {
 
   void _changed() {
     _revision.value++;
+    _store?.write(jsonEncode(_snapshot()));
+  }
+
+  @override
+  Future<void> resetDemoData() async {
+    await _store?.clear();
+    final fresh = MockPosRepository();
+    _restore(fresh._snapshot());
+    _revision.value++;
+  }
+
+  Map<String, dynamic> _menuItemJson(MenuItem it) => {
+        ...it.toJson(),
+        'modifier_groups': it.modifierGroups.map((g) => g.toJson()).toList(),
+      };
+
+  Map<String, dynamic> _tableJson(DiningTable t) => {
+        ...t.toJson(),
+        'order_status': switch (t.status) {
+          TableStatus.free => null,
+          TableStatus.occupied => 'open',
+          TableStatus.billed => 'billed',
+        },
+      };
+
+  Map<String, dynamic> _orderJson(PlacedOrder o) => {
+        'id': o.id,
+        'type': o.type.name,
+        'hall': o.hall?.toJson(),
+        'table': o.table == null ? null : _tableJson(o.table!),
+        'server': o.server.toJson(),
+        'customer_name': o.customerName,
+        'customer_phone': o.customerPhone,
+        'items': [
+          for (final c in o.items)
+            {
+              'item': _menuItemJson(c.item),
+              'modifiers': c.modifiers.map((m) => m.toJson()).toList(),
+              'quantity': c.quantity,
+              'note': c.note,
+            },
+        ],
+        'created_at': o.createdAt.toIso8601String(),
+        'status': o.status.name,
+        'kitchen_status': o.kitchenStatus.name,
+        'payment_method': o.paymentMethod?.toJson(),
+        'discount': o.discount,
+        'service_charge': o.serviceCharge,
+        'tax_percent': o.taxPercent,
+        'tax': o.tax,
+        'total': o.total,
+        'amount_received': o.amountReceived,
+        'payment_reference': o.paymentReference,
+        'closed_at': o.closedAt?.toIso8601String(),
+      };
+
+  PlacedOrder _orderFromJson(Map<String, dynamic> j) {
+    final o = PlacedOrder(
+      id: j['id'],
+      type: OrderType.values.byName(j['type']),
+      hall: j['hall'] == null ? null : Hall.fromJson(j['hall']),
+      table: j['table'] == null ? null : DiningTable.fromJson(j['table']),
+      server: Staff.fromJson(j['server']),
+      customerName: j['customer_name'] ?? '',
+      customerPhone: j['customer_phone'] ?? '',
+      items: [
+        for (final c in (j['items'] as List))
+          CartItem(
+            item: MenuItem.fromJson(c['item']),
+            modifiers: [
+              for (final m in (c['modifiers'] as List)) ModifierOption.fromJson(m),
+            ],
+            quantity: c['quantity'],
+            note: c['note'] ?? '',
+          ),
+      ],
+      status: OrderStatus.values.byName(j['status']),
+      kitchenStatus: KitchenStatus.values.byName(j['kitchen_status']),
+      createdAt: DateTime.parse(j['created_at']),
+    );
+    o
+      ..paymentMethod =
+          j['payment_method'] == null ? null : PaymentMethod.fromJson(j['payment_method'])
+      ..discount = (j['discount'] as num).toDouble()
+      ..serviceCharge = (j['service_charge'] as num).toDouble()
+      ..taxPercent = (j['tax_percent'] as num).toDouble()
+      ..tax = (j['tax'] as num).toDouble()
+      ..total = (j['total'] as num).toDouble()
+      ..amountReceived = (j['amount_received'] as num).toDouble()
+      ..paymentReference = j['payment_reference'] ?? ''
+      ..closedAt = j['closed_at'] == null ? null : DateTime.parse(j['closed_at']);
+    return o;
+  }
+
+  Map<String, dynamic> _snapshot() => {
+        'next_id': _nextId,
+        'next_order_id': _nextOrderId,
+        'staff': _staff.map((s) => s.toJson()).toList(),
+        'pins': _pins.map((k, v) => MapEntry('$k', v)),
+        'stations': _stations.map((s) => s.toJson()).toList(),
+        'groups': _groups.map((g) => g.toJson()).toList(),
+        'categories': _categories.map((c) => c.toJson()).toList(),
+        'items': _items.map(_menuItemJson).toList(),
+        'halls': _halls.map((h) => h.toJson()).toList(),
+        'tables': _tables.map(_tableJson).toList(),
+        'payment_methods': _paymentMethods.map((m) => m.toJson()).toList(),
+        'settings': _settings.toJson(),
+        'orders': _orders.map(_orderJson).toList(),
+      };
+
+  void _restore(Map<String, dynamic> j) {
+    List<T> list<T>(String key, T Function(Map<String, dynamic>) f) =>
+        [for (final e in (j[key] as List)) f(e as Map<String, dynamic>)];
+
+    final staff = list('staff', Staff.fromJson);
+    final stations = list('stations', Station.fromJson);
+    final groups = list('groups', ModifierGroup.fromJson);
+    final categories = list('categories', MenuCategory.fromJson);
+    final items = list('items', MenuItem.fromJson);
+    final halls = list('halls', Hall.fromJson);
+    final tables = list('tables', DiningTable.fromJson);
+    final methods = list('payment_methods', PaymentMethod.fromJson);
+    final orders = list('orders', _orderFromJson);
+    final pins = (j['pins'] as Map<String, dynamic>)
+        .map((k, v) => MapEntry(int.parse(k), v as String));
+    final settings = AppSettings.fromJson(j['settings']);
+
+    _nextId = j['next_id'];
+    _nextOrderId = j['next_order_id'];
+    _staff..clear()..addAll(staff);
+    _pins..clear()..addAll(pins);
+    _stations..clear()..addAll(stations);
+    _groups..clear()..addAll(groups);
+    _categories..clear()..addAll(categories);
+    _items..clear()..addAll(items);
+    _halls..clear()..addAll(halls);
+    _tables..clear()..addAll(tables);
+    _paymentMethods..clear()..addAll(methods);
+    _settings = settings;
+    _orders..clear()..addAll(orders);
   }
 
   final List<Staff> _staff = [
@@ -573,7 +728,10 @@ class MockPosRepository implements PosRepository {
 
     Staff build(int id) => Staff(id: id, employeeCode: code, name: name, role: s.role, isActive: s.isActive);
     final saved = _upsert<Staff>(_staff, build(s.id), (x) => x.id, build);
-    if (newPin != null) _pins[saved.id] = newPin;
+    if (newPin != null) {
+      _pins[saved.id] = newPin;
+      _changed();
+    }
     return saved;
   }
 

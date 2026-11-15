@@ -1,17 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/app_theme.dart';
+import 'data/local_store.dart';
 import 'data/mock_pos_repository.dart';
 import 'data/pos_repository.dart';
 import 'providers/order_provider.dart';
 import 'screens/login_screen.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final prefs = await SharedPreferences.getInstance();
+  final repo = MockPosRepository(store: SharedPrefsStore(prefs));
+
   runApp(
     MultiProvider(
       providers: [
-        Provider<PosRepository>(create: (_) => MockPosRepository()),
+        Provider<PosRepository>.value(value: repo),
         ChangeNotifierProvider(create: (_) => OrderProvider()),
       ],
       child: const PunchItApp(),
