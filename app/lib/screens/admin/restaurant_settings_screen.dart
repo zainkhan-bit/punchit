@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/app_theme.dart';
 import '../../data/pos_repository.dart';
 import '../../models/models.dart';
 import '../../widgets/ui_kit.dart';
@@ -50,6 +51,29 @@ class _RestaurantSettingsScreenState extends State<RestaurantSettingsScreen> {
 
   Future<void> _open(Widget page) async {
     await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page));
+    _load();
+  }
+
+  Future<void> _resetData() async {
+    final repo = context.read<PosRepository>();
+    final messenger = ScaffoldMessenger.of(context);
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Demo data reset karna hai?'),
+        content: const Text(
+          'Saare orders, menu, staff aur settings shuru wali halat pe wapas aa jayenge.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Nahi')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Haan, reset')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    await repo.resetDemoData();
+    if (!mounted) return;
+    messenger.showSnackBar(const SnackBar(content: Text('Demo data reset ho gaya')));
     _load();
   }
 
@@ -109,6 +133,13 @@ class _RestaurantSettingsScreenState extends State<RestaurantSettingsScreen> {
                   ),
                   const SizedBox(height: 16),
                   const NoteBanner(text: 'Changes naye orders pe foran lag jati hain.'),
+                  const SizedBox(height: 16),
+                  ListRowCard(
+                    title: 'Reset demo data',
+                    subtitle: 'Data phone mein save hota hai. Yahan se shuru wala data wapas lao.',
+                    trailing: const Icon(Icons.restart_alt, color: AppColors.primary),
+                    onTap: _resetData,
+                  ),
                   const SizedBox(height: 16),
                 ],
               ),
