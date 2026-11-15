@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../core/bill_calculator.dart';
 import '../models/models.dart';
 import 'pos_repository.dart';
@@ -9,6 +11,15 @@ class MockPosRepository implements PosRepository {
   int _newId() => _nextId++;
 
   int _nextOrderId = 1001;
+
+  final ValueNotifier<int> _revision = ValueNotifier<int>(0);
+
+  @override
+  Listenable get changes => _revision;
+
+  void _changed() {
+    _revision.value++;
+  }
 
   final List<Staff> _staff = [
     const Staff(id: 1, employeeCode: 'S101', name: 'Ali', role: 'server'),
@@ -173,11 +184,13 @@ class MockPosRepository implements PosRepository {
     if (id == 0) {
       final created = withId(_newId());
       list.add(created);
+      _changed();
       return created;
     }
     final i = list.indexWhere((e) => idOf(e) == id);
     _require(i != -1, 'Record nahi mila');
     list[i] = value;
+    _changed();
     return value;
   }
 
@@ -265,6 +278,7 @@ class MockPosRepository implements PosRepository {
       items: List.of(items),
     );
     _orders.insert(0, order);
+    _changed();
     return order.id;
   }
 
@@ -282,6 +296,7 @@ class MockPosRepository implements PosRepository {
     _require(o != null, 'Order nahi mila');
     _require(o!.isActive, 'Order #$orderId band ho chuka hai');
     o.kitchenStatus = status;
+    _changed();
   }
 
   @override
@@ -301,6 +316,7 @@ class MockPosRepository implements PosRepository {
 
     final i = _tables.indexWhere((t) => t.id == o.table?.id);
     if (i != -1) _tables[i] = _tables[i].withStatus(TableStatus.free);
+    _changed();
     return o;
   }
 
@@ -359,6 +375,7 @@ class MockPosRepository implements PosRepository {
     final count = _items.where((i) => i.categoryId == id).length;
     _require(count == 0, 'Is category mein $count products hain. Pehle unhein delete ya move karo.');
     _categories.removeWhere((c) => c.id == id);
+    _changed();
   }
 
   @override
@@ -388,6 +405,7 @@ class MockPosRepository implements PosRepository {
   Future<void> deleteMenuItem(int id) async {
     await Future.delayed(_delay);
     _items.removeWhere((i) => i.id == id);
+    _changed();
   }
 
   @override
@@ -427,6 +445,7 @@ class MockPosRepository implements PosRepository {
         _items[i] = it.withGroups(it.modifierGroups.where((g) => g.id != id).toList());
       }
     }
+    _changed();
   }
 
   @override
@@ -476,6 +495,7 @@ class MockPosRepository implements PosRepository {
         );
       }
     }
+    _changed();
   }
 
   @override
@@ -492,6 +512,7 @@ class MockPosRepository implements PosRepository {
     final count = _tables.where((t) => t.hallId == id).length;
     _require(count == 0, 'Is hall mein $count tables hain. Pehle tables delete karo.');
     _halls.removeWhere((h) => h.id == id);
+    _changed();
   }
 
   @override
@@ -520,6 +541,7 @@ class MockPosRepository implements PosRepository {
     final t = _tables.firstWhere((x) => x.id == id);
     _require(t.status == TableStatus.free, 'Table ${t.tableNumber} pe order chal raha hai, abhi delete nahi ho sakti');
     _tables.removeWhere((x) => x.id == id);
+    _changed();
   }
 
   @override
@@ -577,6 +599,7 @@ class MockPosRepository implements PosRepository {
     final otherActive = _paymentMethods.where((x) => x.id != id && x.isActive).length;
     _require(otherActive > 0, 'Kam az kam 1 payment method active hona chahiye');
     _paymentMethods.removeWhere((x) => x.id == id);
+    _changed();
   }
 
   @override
@@ -585,6 +608,7 @@ class MockPosRepository implements PosRepository {
     _require(s.restaurantName.trim().isNotEmpty, 'Restaurant ka naam likho');
     _require(s.serviceChargePercent >= 0 && s.serviceChargePercent <= 100, 'Service charge 0 se 100% ke beech ho');
     _settings = s;
+    _changed();
     return s;
   }
 }

@@ -22,10 +22,20 @@ class _YourOrdersScreenState extends State<YourOrdersScreen> {
   int _tab = 0;
   bool _loading = true;
 
+  late final Listenable _changes;
+
   @override
   void initState() {
     super.initState();
+    _changes = context.read<PosRepository>().changes;
+    _changes.addListener(_load);
     _load();
+  }
+
+  @override
+  void dispose() {
+    _changes.removeListener(_load);
+    super.dispose();
   }
 
   Future<void> _load() async {

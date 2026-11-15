@@ -1,6 +1,10 @@
+import 'package:flutter/foundation.dart';
+
 import '../models/models.dart';
 
 abstract class PosRepository {
+  Listenable get changes;
+
   Future<Staff?> login(String employeeCode, String pin);
 
   Future<List<MenuCategory>> getCategories();
