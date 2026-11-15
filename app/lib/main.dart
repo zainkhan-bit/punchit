@@ -28,6 +28,35 @@ class PunchItApp extends StatelessWidget {
       title: 'PunchIt',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
+      builder: (context, child) {
+        final media = MediaQuery.of(context);
+        if (media.size.width > 500) {
+          return Container(
+            color: const Color(0xFF1A1A1A),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 450, maxHeight: 900),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).scaffoldBackgroundColor,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Colors.black54,
+                        blurRadius: 24,
+                        spreadRadius: 4,
+                      ),
+                    ],
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: child,
+                ),
+              ),
+            ),
+          );
+        }
+        return child!;
+      },
       home: const LoginScreen(),
     );
   }
