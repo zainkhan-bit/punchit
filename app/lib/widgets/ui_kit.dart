@@ -56,7 +56,7 @@ class ScreenHeader extends StatelessWidget {
               ],
             ),
           ),
-          ?trailing,
+          if (trailing != null) trailing!,
         ],
       ),
     );
@@ -362,7 +362,7 @@ class PillScroller extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: options.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
         itemBuilder: (_, i) => Pill(
           label: options[i],
           selected: i == selectedIndex,
