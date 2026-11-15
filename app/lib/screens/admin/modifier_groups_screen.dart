@@ -90,7 +90,7 @@ class _ModifierGroupsScreenState extends State<ModifierGroupsScreen> {
               : ListView.separated(
                   padding: const EdgeInsets.only(bottom: 88),
                   itemCount: _groups.length,
-                  separatorBuilder: (_, _) => const Divider(height: 1),
+                  separatorBuilder: (_, __) => const Divider(height: 1),
                   itemBuilder: (_, i) {
                     final g = _groups[i];
                     final names = g.options.map((o) => o.name).join(', ');
