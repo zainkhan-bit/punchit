@@ -92,7 +92,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
               : ListView.separated(
                   padding: const EdgeInsets.only(bottom: 88),
                   itemCount: _categories.length,
-                  separatorBuilder: (_, _) => const Divider(height: 1),
+                  separatorBuilder: (_, __) => const Divider(height: 1),
                   itemBuilder: (_, i) {
                     final c = _categories[i];
                     return ListTile(
