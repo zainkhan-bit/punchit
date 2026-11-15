@@ -17,9 +17,65 @@ class AppColors {
   static const textSecondary = Color(0xFF8A8A84);
   static const divider = Color(0xFFE6E4DE);
 
+  static const primaryLight = Color(0xFFD9683C);
+  static const darkGreenLight = Color(0xFF2D5A43);
+  static const darkGreenDeep = Color(0xFF16291F);
+  static const skeleton = Color(0xFFECE9E2);
+
   static const free = green;
   static const occupied = primary;
   static const billed = Color(0xFFC9891A);
+}
+
+class AppGradients {
+  AppGradients._();
+
+  static const primary = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [AppColors.primaryLight, AppColors.primary],
+  );
+
+  static const hero = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [
+      AppColors.darkGreenLight,
+      AppColors.darkGreen,
+      AppColors.darkGreenDeep,
+    ],
+  );
+
+  static const badge = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFF3C9A72), AppColors.green],
+  );
+}
+
+class AppShadows {
+  AppShadows._();
+
+  static const card = [
+    BoxShadow(color: Color(0x12000000), blurRadius: 18, offset: Offset(0, 8)),
+    BoxShadow(color: Color(0x0A000000), blurRadius: 3, offset: Offset(0, 1)),
+  ];
+
+  static const soft = [
+    BoxShadow(color: Color(0x0D000000), blurRadius: 10, offset: Offset(0, 4)),
+  ];
+
+  static const button = [
+    BoxShadow(color: Color(0x59B94620), blurRadius: 16, offset: Offset(0, 8)),
+  ];
+
+  static const hero = [
+    BoxShadow(color: Color(0x471F3B2B), blurRadius: 26, offset: Offset(0, 14)),
+  ];
+
+  static const nav = [
+    BoxShadow(color: Color(0x14000000), blurRadius: 18, offset: Offset(0, -4)),
+  ];
 }
 
 class AppTheme {
