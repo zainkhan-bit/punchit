@@ -5,6 +5,7 @@ import '../core/app_theme.dart';
 import '../data/pos_repository.dart';
 import '../models/models.dart';
 import '../providers/order_provider.dart';
+import '../widgets/motion.dart';
 import '../widgets/order_card.dart';
 import '../widgets/ui_kit.dart';
 import 'collect_payment_screen.dart';
@@ -39,9 +40,11 @@ class _OrderTypeScreenState extends State<OrderTypeScreen> {
   Future<void> _load() async {
     final repo = context.read<PosRepository>();
     final staff = context.read<OrderProvider>().loggedInStaff;
-    final orders = await repo.getOrders(activeOnly: true);
+    final ordersFuture = repo.getOrders(activeOnly: true);
     final halls = await repo.getHalls();
-    final tables = [for (final h in halls) ...await repo.getTables(h.id)];
+    final perHall = await Future.wait([for (final h in halls) repo.getTables(h.id)]);
+    final orders = await ordersFuture;
+    final tables = [for (final list in perHall) ...list];
     if (!mounted) return;
     setState(() {
       _orders = staff != null && staff.role == StaffRoles.server
@@ -77,7 +80,8 @@ class _OrderTypeScreenState extends State<OrderTypeScreen> {
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              Row(
+              FadeSlideIn(
+                child: Row(
                 children: [
                   if (isAdmin)
                     IconButton(
@@ -101,33 +105,45 @@ class _OrderTypeScreenState extends State<OrderTypeScreen> {
                     ),
                   ),
                 ],
+                ),
               ),
               const SizedBox(height: 20),
-              const HeroCard(
-                icon: Icons.add,
-                title: 'Ready for the rush?',
-                subtitle: 'Start a table order or pack a takeaway.',
+              const FadeSlideIn(
+                index: 1,
+                child: HeroCard(
+                  icon: Icons.add,
+                  title: 'Ready for the rush?',
+                  subtitle: 'Start a table order or pack a takeaway.',
+                ),
               ),
               const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: StatTile(
-                      label: 'Active orders',
-                      value: _loading ? '-' : '${_orders.length}',
+              FadeSlideIn(
+                index: 2,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: StatTile(
+                        label: 'Active orders',
+                        value: '-',
+                        count: _loading ? null : _orders.length,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: StatTile(
-                      label: 'Tables free',
-                      value: _loading ? '-' : '$_freeTables / $_totalTables',
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: StatTile(
+                        label: 'Tables free',
+                        value: '-',
+                        count: _loading ? null : _freeTables,
+                        format: (v) => '${v.round()} / $_totalTables',
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               const SizedBox(height: 12),
-              Row(
+              FadeSlideIn(
+                index: 3,
+                child: Row(
                 children: [
                   Expanded(
                     child: PrimaryButton(
@@ -145,25 +161,32 @@ class _OrderTypeScreenState extends State<OrderTypeScreen> {
                     ),
                   ),
                 ],
+                ),
               ),
               const SizedBox(height: 20),
-              const Text(
-                'On your floor',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              const FadeSlideIn(
+                index: 4,
+                child: Text(
+                  'On your floor',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
               ),
               const SizedBox(height: 10),
               if (_loading)
-                const Padding(
-                  padding: EdgeInsets.all(24),
-                  child: Center(child: CircularProgressIndicator()),
-                )
+                const SkeletonList(count: 2)
               else if (_orders.isEmpty)
-                const NoteBanner(text: 'Abhi koi active order nahi.', type: NoteType.success)
+                const FadeSlideIn(
+                  child: NoteBanner(text: 'Abhi koi active order nahi.', type: NoteType.success),
+                )
               else
-                for (final o in _orders.take(3))
+                for (final (i, o) in _orders.take(3).indexed)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 10),
-                    child: OrderCard(order: o, onTap: () => _openPayment(o)),
+                    child: FadeSlideIn(
+                      key: ValueKey(o.id),
+                      index: i,
+                      child: OrderCard(order: o, onTap: () => _openPayment(o)),
+                    ),
                   ),
             ],
           ),
