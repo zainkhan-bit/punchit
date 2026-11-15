@@ -83,7 +83,7 @@ class _StationsScreenState extends State<StationsScreen> {
               : ListView.separated(
                   padding: const EdgeInsets.only(bottom: 88),
                   itemCount: _stations.length,
-                  separatorBuilder: (_, _) => const Divider(height: 1),
+                  separatorBuilder: (_, __) => const Divider(height: 1),
                   itemBuilder: (_, i) {
                     final s = _stations[i];
                     final printer = s.printerIp == null
