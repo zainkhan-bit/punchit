@@ -5,6 +5,7 @@ import '../core/app_theme.dart';
 import '../data/pos_repository.dart';
 import '../models/models.dart';
 import '../providers/order_provider.dart';
+import '../widgets/motion.dart';
 import '../widgets/ui_kit.dart';
 import 'menu_screen.dart';
 
@@ -104,7 +105,13 @@ class _ChooseTableScreenState extends State<ChooseTableScreen> {
               ),
             Expanded(
               child: _loadingTables
-                  ? const Center(child: CircularProgressIndicator())
+                  ? const Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Align(
+                        alignment: Alignment.topCenter,
+                        child: SkeletonList(count: 3, itemHeight: 96),
+                      ),
+                    )
                   : ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
@@ -129,13 +136,17 @@ class _ChooseTableScreenState extends State<ChooseTableScreen> {
                     physics: const NeverScrollableScrollPhysics(),
                     mainAxisSpacing: 10,
                     crossAxisSpacing: 10,
-                    childAspectRatio: 1.6,
+                    childAspectRatio: 1.5,
                     children: [
-                      for (final t in _tables)
-                        _TableTile(
-                          table: t,
-                          selected: t.id == _table?.id,
-                          onTap: () => setState(() => _table = t),
+                      for (final (i, t) in _tables.indexed)
+                        FadeSlideIn(
+                          key: ValueKey(t.id),
+                          index: i,
+                          child: _TableTile(
+                            table: t,
+                            selected: t.id == _table?.id,
+                            onTap: () => setState(() => _table = t),
+                          ),
                         ),
                     ],
                   ),
@@ -210,37 +221,68 @@ class _TableTile extends StatelessWidget {
       TableStatus.billed => ('Bill printed', AppColors.billed),
     };
 
-    return Material(
-      color: background,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: free ? onTap : null,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'T${table.tableNumber}',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: selected ? Colors.white : AppColors.textPrimary,
-                ),
+    final edge = selected
+        ? AppColors.darkGreenDeep
+        : free
+        ? const Color(0xFFE2DED4)
+        : const Color(0xFFF3D9C4);
+    const radius = BorderRadius.all(Radius.circular(16));
+
+    return PressDepth(
+      pressed: selected || !free,
+      edgeColor: edge,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOut,
+        decoration: BoxDecoration(
+          color: selected ? null : background,
+          gradient: selected ? AppGradients.hero : null,
+          borderRadius: radius,
+        ),
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            borderRadius: radius,
+            onTap: free ? onTap : null,
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'T${table.tableNumber}',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: selected ? Colors.white : AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${table.capacity} seats',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: selected ? Colors.white70 : AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(statusText, style: TextStyle(fontSize: 11, color: statusColor)),
+                      ],
+                    ),
+                  ),
+                  AnimatedScale(
+                    scale: selected ? 1 : 0,
+                    duration: const Duration(milliseconds: 260),
+                    curve: Curves.easeOutBack,
+                    child: const Icon(Icons.check_circle, color: Colors.white, size: 22),
+                  ),
+                ],
               ),
-              const SizedBox(height: 4),
-              Text(
-                '${table.capacity} seats',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: selected ? Colors.white70 : AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(statusText, style: TextStyle(fontSize: 11, color: statusColor)),
-            ],
+            ),
           ),
         ),
       ),
