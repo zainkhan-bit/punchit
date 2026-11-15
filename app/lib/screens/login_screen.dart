@@ -90,6 +90,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       color: AppColors.textSecondary,
                     ),
                   ),
+                  const SizedBox(height: 8),
+                  const MyBadge(),
                   const SizedBox(height: 20),
                   const HeroCard(
                     icon: Icons.room_service_outlined,
@@ -148,6 +150,37 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class MyBadge extends StatelessWidget {
+  const MyBadge({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE8F5E9),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.green, width: 1.2),
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.check_circle, color: Colors.green, size: 14),
+          SizedBox(width: 4),
+          Text(
+            'POS System Online',
+            style: TextStyle(
+              color: Colors.green,
+              fontWeight: FontWeight.bold,
+              fontSize: 11,
+            ),
+          ),
+        ],
       ),
     );
   }
